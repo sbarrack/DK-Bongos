@@ -26,7 +26,7 @@
 	arduinos and game controllers!
 
 	Controllers: GCC, DK Bongos, GC Keyboard
-	Arduinos: Teensy 3.6, 3.5, (bring back Uno/Nano soon)
+	Arduinos: Teensy 3.5 120MHz, Teensy 3.6 180MHz
 	*/
 
 //gcapi.h

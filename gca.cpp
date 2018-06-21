@@ -67,7 +67,7 @@ uint8_t gcWrite(const uint8_t pin, gcStatus* status, gcOrigin* origin, gcReport*
 	uint8_t oldSREG = SREG;
 	cli();
 
-	uint8_t command[3] = { 0,0,0 }; // TODO do not init
+	uint8_t command[3] = { 0,0,0 };	//TODO: do not init
 	uint8_t receivedBytes = gcGet(command, sizeof(command), modePort, outPort, inPort, bitMask);
 
 	// Init

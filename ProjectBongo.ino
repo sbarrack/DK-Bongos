@@ -25,8 +25,9 @@
 /*TODO: On bongos remap the special attacks, snapback/turnarounds. 
 	Put in Wiimote stuff. Test out keyboard. Make a logic analyzer 
 	out of Teensy to figure out how Maracas work. Get N64 controllers 
-	working too.
+	working too. Uno/Nano functionality (change directives in gcb.cpp).
 	*/
+
 #include <Arduino.h>
 #include "gc.h"
 

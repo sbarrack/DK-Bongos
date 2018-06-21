@@ -17,8 +17,6 @@
 	For any issues, please contact stephen.barrack12@yahoo.com.
 	*/
 
-//TODO: Base nops on F_CPU (clock speed in Hz) and send/get functions on ARDUINO (microcontroller type)
-
 //gcn64.c
 #include "gcb.h"
 
@@ -31,14 +29,14 @@ void gcSend(const uint8_t* buff, uint8_t len, volatile uint8_t* modePort, volati
 
 	__asm__ volatile (
 		".L%=_byte_loop:\n"
-		"ldr %[data],%a[buff],1\n"	//data -> buffer++
-		"mov %[bitCount],8\n"		//bitCount = 8
+		"ldr %[data],%a[buff],1\n"	//(2) data -> buffer++
+		"mov %[bitCount],8\n"		//(1) bitCount = 8
+		"nop\nnop\n"				//(2)
 
 		".L%=_bit_loop:\n"
-		"ldr %[outPort],%a[low]\n"	//outPort -> low
-		"lsl %[data],1\n"			//data << 1
-		"bcc .L%=_zero_bit\n"		//if C == 0, goto
-
+		"nop\nnop\n"				//(2)
+		"ldr %[outPort],%a[low]\n"	//(2) outPort -> low
+		//1us - 4
 		"nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n"
 		"nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n"
 		"nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n"
@@ -51,50 +49,21 @@ void gcSend(const uint8_t* buff, uint8_t len, volatile uint8_t* modePort, volati
 		"nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n"
 
 		"nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n"
-		"nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n"
-		"nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n"
-		"nop\nnop\nnop\nnop\nnop\n"	//nop 135
-		"ldr %[outPort],%a[high]\n"	//outPort -> high
-		"nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n"
+		"nop\nnop\nnop\nnop\nnop\nnop\n"	//(116)
+#ifdef __HARDWARE_MK66FX1M0__	//Teensy 3.6
 		"nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n"
 		"nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n"
 		"nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n"
 		"nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n"
 		"nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n"
-		"nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n"
-		"nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n"
-		"nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n"
-		"nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n"
-
-		"nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n"
-		"nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n"
-		"nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n"
-		"nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n"
-		"nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n"
-		"nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n"
-		"nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n"
-		"nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n"
-		"nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n"
-		"nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n"
-
-		"nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n"
-		"nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n"
-		"nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n"
-		"nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n"
-		"nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n"
-		"nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n"
-		"nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n"
-		"nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n"
-		"nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n"
-		"nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n"
-
-		"nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n"
-		"nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n"
-		"nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n"
-		"nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n"	//nop 338
-		"b .L%=_finish_bit\n"	//goto
+		"nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n"	//(60)
+#endif
+		"lsl %[data],1\n"			//(1) data << 1
+		"bcc .L%=_zero_bit\n"		//(1|1+p) if C == 0, goto
+		"ldr %[outPort],%a[high]\n"	//(2) outPort -> high
 
 		".L%=_zero_bit:\n"
+		//2us - 5
 		"nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n"
 		"nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n"
 		"nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n"
@@ -120,42 +89,8 @@ void gcSend(const uint8_t* buff, uint8_t len, volatile uint8_t* modePort, volati
 		"nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n"
 		"nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n"
 		"nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n"
-		"nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n"
-		"nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n"
-		"nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n"
-		"nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n"
-		"nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n"
-		"nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n"
-		"nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n"
-		"nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n"
-
-		"nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n"
-		"nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n"
-		"nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n"
-		"nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n"
-		"nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n"
-		"nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n"
-		"nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n"
-		"nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n"
-		"nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n"
-		"nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n"
-		"nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n"
-
-		"nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n"
-		"nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n"
-		"nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n"
-		"nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n"
-		"nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n"
-		"nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n"
-		"nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n"
-		"nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n"
-		"nop\nnop\nnop\nnop\n"		//nop 484
-		"ldr %[outPort],%a[high]\n"	//outPort -> high
-
-		".L%=_finish_bit:\n"
-		"sub %[bitCount],1\n"		//bitCount--
-		"beq .L%=_load_next_byte\n"	//if bitCount==0, goto
-		"nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n"
+		"nop\nnop\nnop\nnop\nnop\n"	//(235)
+#ifdef __HARDWARE_MK66FX1M0__	//Teensy 3.6
 		"nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n"
 		"nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n"
 		"nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n"
@@ -168,33 +103,50 @@ void gcSend(const uint8_t* buff, uint8_t len, volatile uint8_t* modePort, volati
 		"nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n"
 
 		"nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n"
-		"nop\nnop\nnop\n"	//nop 113
-		"b .L%=_bit_loop\n"	//goto
+		"nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n"	//(120)
+#endif
+		"ldr %[outPort],%a[high]\n"	//(2) outPort -> high
+		//1us - 8
+		"nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n"
+		"nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n"
+		"nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n"
+		"nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n"
+		"nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n"
+		"nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n"
+		"nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n"
+		"nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n"
+		"nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n"
+		"nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n"
+
+		"nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n"
+		"nop\nnop\n"	//(112)
+#ifdef __HARDWARE_MK66FX1M0__	//Teensy 3.6
+		"nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n"
+		"nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n"
+		"nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n"
+		"nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n"
+		"nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n"
+		"nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n"	//(60)
+#endif
+		"sub %[bitCount],1\n"		//(1) bitCount--
+		"beq .L%=_load_next_byte\n"	//(1|1+p) if bitCount == 0, goto
+		"b .L%=_bit_loop\n"			//(1+p) goto
 
 		".L%=_load_next_byte:\n"
-		"sub %[len],1\n"		//len--
-		"beq .L%=_loop_exit\n"	//if len==0, goto
-		"nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n"
-		"nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n"
-		"nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n"
-		"nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n"
-		"nop\nnop\nnop\nnop\nnop\n"	//nop 45
-		"b .L%=_byte_loop\n"		//goto
+		"sub %[len],1\n"		//(1) len--
+		"beq .L%=_loop_exit\n"	//(1|1+p) if len == 0, goto
+		"b .L%=_byte_loop\n"	//(1+p) goto
 
 		".L%=_loop_exit:\n"
-		"nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n"
-		"nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n"
-		"nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n"
-		"nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n"
-		"nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n"
-		"nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n"
-		"nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n"
-		"nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n"
-		"nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n"
-		"nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n"
-									//nop 90
-		"ldr %[outPort],%a[low]\n"	//outPort -> low
-		"nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n"
+		/*	I've seen several different opinions about what the proper stop bit is:
+			1) Both console and controller send a 1 bit (Nico and James)
+			2) Controller sends a 2us low - 2us high, console sends a 1us low - 2us high (n64squid)
+			3) According to other N64 documentation both send a 1us low - 2us high except if
+				the console sends the 0x02/0x03 command (accessing N64 controller pak)
+			I'll just stick with a 1 bit here.
+		*/
+		"ldr %[outPort],%a[low]\n"	//(2) outPort -> low
+		//1us - 2
 		"nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n"
 		"nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n"
 		"nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n"
@@ -207,12 +159,16 @@ void gcSend(const uint8_t* buff, uint8_t len, volatile uint8_t* modePort, volati
 		"nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n"
 
 		"nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n"
+		"nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n"	//(118)
+#ifdef __HARDWARE_MK66FX1M0__	//Teensy 3.6
 		"nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n"
 		"nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n"
 		"nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n"
 		"nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n"
-		"nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n"	//nop 158
-		"ldr %[outPort],%a[high]\n"					//outPort -> high
+		"nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n"
+		"nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n"	//(60)
+#endif
+		"ldr %[outPort],%a[high]\n"	//(2) outPort -> high
 
 		://outs
 		//read and write
@@ -240,45 +196,50 @@ uint8_t gcGet(uint8_t* buff, uint8_t len, volatile uint8_t* modePort, volatile u
 	register uint8_t initialTimeoutCount;
 
 	__asm__ volatile(
-		"mov %[bitCount],8\n"				//bitCount = 8
-		"mov %[receivedBytes],0\n"			//receivedBytes = 0
-		"mov %[initialTimeoutCount],0\n"	//initialTimeoutCount = 0
+		"mov %[bitCount],8\n"				//(1) bitCount = 8
+		"mov %[receivedBytes],0\n"			//(1) receivedBytes = 0
+		"mov %[initialTimeoutCount],0\n"	//(1) initialTimeoutCount = 0
 
 		".L%=_wait_for_low_extra:\n"
-		"mov %[timeoutCount],0\n"	//timeoutCount = 0
+		"mov %[timeoutCount],0\n"	//(1) timeoutCount = 0
 
 		".L%=_wait_for_low_loop_extra1:\n"
-		"ldr %[inputVal], %a[inPort]\n"			//inputVal -> inPort
-		"and %[inputVal], %[bitMask]\n"			//to compare
-		"beq .L%=_wait_for_measure\n"			//if inputVal = 0, goto
-		"sub %[timeoutCount],1\n"				//timeoutCount--
-		"bne .L%=_wait_for_low_loop_extra1\n"	//if timeoutCount != 0, goto
-
-		"mov %[timeoutCount],0\n"	//timeoutCount = 0
+		"ldr %[inputVal], %a[inPort]\n"			//(2) inputVal -> inPort
+		"and %[inputVal], %[bitMask]\n"			//(1) to compare
+		"beq .L%=_wait_for_measure\n"			//(1|1+p) if inputVal = 0, goto
+		"sub %[timeoutCount],1\n"				//(1) timeoutCount--
+		"bne .L%=_wait_for_low_loop_extra1\n"	//(1|1+p) if timeoutCount != 0, goto
+		"mov %[timeoutCount],0\n"				//(1) timeoutCount = 0
 
 		".L%=_wait_for_low_loop_extra2:\n"
-		"ldr %[inputVal], %a[inPort]\n"			//inputVal -> inPort
-		"and %[inputVal], %[bitMask]\n"			//to compare
-		"beq .L%=_wait_for_measure\n"			//if inputVal = 0, goto
-		"sub %[timeoutCount],1\n"				//timeoutCount--
-		"bne .L%=_wait_for_low_loop_extra2\n"	//if timeoutCount != 0, goto
+		"ldr %[inputVal], %a[inPort]\n"			//(2) inputVal -> inPort
+		"and %[inputVal], %[bitMask]\n"			//(1) to compare
+		"beq .L%=_wait_for_measure\n"			//(1|1+p) if inputVal = 0, goto
+		"sub %[timeoutCount],1\n"				//(1) timeoutCount--
+		"bne .L%=_wait_for_low_loop_extra2\n"	//(1|1+p) if timeoutCount != 0, goto
 
 		".L%=_wait_for_low:\n"
-		"mov %[timeoutCount],128\n"	//timeoutCount = 128
+		"mov %[timeoutCount],128\n"	//(1) timeoutCount = 128
 
 		".L%=_wait_for_low_loop:\n"
-		"ldr %[inputVal], %a[inPort]\n"	//inputVal -> inPort
-		"and %[inputVal], %[bitMask]\n"	//to compare
-		"beq .L%=_wait_for_measure\n"	//if inputVal = 0, goto
-		"sub %[timeoutCount],1\n"		//timeoutCount--
-		"bne .L%=_wait_for_low_loop\n"	//if timeoutCount != 0, goto
-
-		"sub %[initialTimeoutCount],1\n"
-		"bne .L%=_wait_for_low_extra\n"	//if initialTimeoutCount != 0, goto
-		"b .L%=_exit\n"					//goto
+		"ldr %[inputVal], %a[inPort]\n"	//(2) inputVal -> inPort
+		"and %[inputVal], %[bitMask]\n"	//(1) to compare
+		"beq .L%=_wait_for_measure\n"	//(1|1+p) if inputVal = 0, goto
+		"sub %[timeoutCount],1\n"		//(1) timeoutCount--
+		"bne .L%=_wait_for_low_loop\n"	//(1|1+p) if timeoutCount != 0, goto
+		"sub %[initialTimeoutCount],1\n"//(1)
+		"bne .L%=_wait_for_low_extra\n"	//(1|1+p) if initialTimeoutCount != 0, goto
+		"b .L%=_exit\n"					//(1+p) goto
 
 		".L%=_wait_for_measure:\n"
-		"nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n"
+		/*	This brings me back to the proper stop bit talk. Normally, I'd be
+			inclined to wait only 1us to measure the bit, HOWEVER, the controller
+			could send a 2us low long stop bit instead of a 1 bit and cause
+			trouble. The duty cycle for reading a bit is 2us long so I still have the
+			opportunity to read the bit 1us later than normal and I'd have to wait
+			anyways for the next bit.
+		*/
+		//2us - 9
 		"nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n"
 		"nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n"
 		"nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n"
@@ -300,44 +261,53 @@ uint8_t gcGet(uint8_t* buff, uint8_t len, volatile uint8_t* modePort, volatile u
 		"nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n"
 		"nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n"
 		"nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n"
-		"nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n"
 
 		"nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n"
 		"nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n"
 		"nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n"
+		"nop\n"	//(231)
+#ifdef __HARDWARE_MK66FX1M0__	//Teensy 3.6
 		"nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n"
 		"nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n"
 		"nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n"
 		"nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n"
-		//nop 270 (in the average case, 237 worst, 304 best)
-		"mov %[initialTimeoutCount],1\n"	//initialTimeoutCount = 1
-		"lsl %[data],1\n"					//data << 1
-		"ldr %[inputVal],%a[inPort]\n"		//inputVal -> inPort
-		"and %[inputVal],%[bitMask]\n"		//to compare
-		"beq .L%=_check_bit_count\n"		//if inputVal = 0, goto
-		"orr %[data],1\n"					//data | 1
+		"nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n"
+		"nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n"
+		"nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n"
+		"nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n"
+		"nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n"
+		"nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n"
+
+		"nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n"
+		"nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n"	//(120)
+#endif
+		"mov %[initialTimeoutCount],1\n"	//(1) initialTimeoutCount = 1
+		"lsl %[data],1\n"					//(1) data << 1
+		"ldr %[inputVal],%a[inPort]\n"		//(2) inputVal -> inPort
+		"and %[inputVal],%[bitMask]\n"		//(1) to compare
+		"beq .L%=_check_bit_count\n"		//(1|1+p) if inputVal = 0, goto
+		"orr %[data],1\n"					//(1) data | 1
 
 		".L%=_check_bit_count:\n"
-		"sub %[bitCount],1\n"		//bitCount--
-		"bne .L%=_wait_for_high\n"	//if bitCount != 0, goto
-
-		"ldr %[buff],%a[data]\n"		//buff -> data
-		"ldr %[data],%a[buff],1\n"		//&buff++
-		"add %[receivedBytes],1\n"		//receivedBytes++
-		"mov %[bitCount],8\n"			//bitCount = 8
-		"mov %[len],%[receivedBytes]\n"	//to compare
-		"beq .L%=_exit\n"				//if len == receivedBytes, goto
+		"sub %[bitCount],1\n"			//(1) bitCount--
+		"bne .L%=_wait_for_high\n"		//(1|1+p) if bitCount != 0, goto
+		"ldr %[buff],%a[data]\n"		//(2) buff -> data
+		"ldr %[data],%a[buff],1\n"		//(2) &buff++
+		"add %[receivedBytes],1\n"		//(1) receivedBytes++
+		"mov %[bitCount],8\n"			//(1) bitCount = 8
+		"mov %[len],%[receivedBytes]\n"	//(1) to compare
+		"beq .L%=_exit\n"				//(1|1+p) if len == receivedBytes, goto
 
 		".L%=_wait_for_high:\n"
-		"mov %[timeoutCount],128\n"	//timeoutCount = timeout
+		"mov %[timeoutCount],128\n"	//(1) timeoutCount = timeout
 
 		".L%=_wait_for_high_loop:\n"
-		"ldr %[inputVal],%a[inPort]\n"	//inputVal -> inPort
-		"and %[inputVal],%[bitMask]\n"	//to compare
-		"bne .L%=_wait_for_low\n"		//if inputVal != 0, goto
-
-		"sub %[timeoutCount],1\n"		//timeoutCount--
-		"bne .L%=_wait_for_high_loop\n"	//if timeoutCount != 0, goto
+		"ldr %[inputVal],%a[inPort]\n"	//(2) inputVal -> inPort
+		"and %[inputVal],%[bitMask]\n"	//(1) to compare
+		"bne .L%=_wait_for_low\n"		//(1|1+p) if inputVal != 0, goto
+		"sub %[timeoutCount],1\n"		//(1) timeoutCount--
+		"bne .L%=_wait_for_high_loop\n"	//(1|1+p) if timeoutCount != 0, goto
+		
 		".L%=_exit:\n"
 
 		://outs
