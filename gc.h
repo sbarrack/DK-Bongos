@@ -26,7 +26,7 @@
 	arduinos and game controllers!
 
 	Controllers: GCC, DK Bongos, GC Keyboard
-	Arduinos: Teensy 3.5 120MHz, Teensy 3.6 180MHz
+	Arduinos: Teensy 3.5 120MHz
 	*/
 
 //gcapi.h
@@ -58,7 +58,7 @@ public:
 
 protected:
 	const uint8_t pin;
-	//friend class gcConsole;
+	friend class gcConsole;
 };
 
 class gcConsole {

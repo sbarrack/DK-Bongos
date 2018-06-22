@@ -71,21 +71,18 @@ static constexpr bongoReport bongoDefRep = { 0, tLow };
 
 void setup()
 {
-	Serial.begin(9600);
-	delay(5000);
+	while (!Serial && (millis() < 3000)); // wait until serial port is created
+	Serial.begin(115200);
+	pinMode(13,OUTPUT);
+	digitalWrite(13,HIGH);
+	delay(500);
 	Serial.println("ProjectBongo  Copyright (C) 2018  Stephen Barrack");
 	Serial.println("This program comes with ABSOLUTELY NO WARRANTY.");
 	Serial.println("This is free software, and you are welcome to redistribute it under certain conditions.");
 	Serial.println("View README and LICENSE included with this project for full details.");
-
-	pinMode(13, OUTPUT);
-	for (int i = 5; i > 1; i--) {
-		digitalWrite(13, HIGH);
-		delay(25 << i);
-		digitalWrite(13, LOW);
-		delay(100);
-	}
- 
+	delay(3000);
+	digitalWrite(13,LOW);
+	
 	bongo = bongoDefRep;
 	wasn = true;
 	lightShield = shieldOn = wasPressed = inv = cr = cl = cd = cu = nn = false;
@@ -93,13 +90,14 @@ void setup()
 }
 
 void loop()
-{  
+{
 	gcr = gcDefault.report;
 	bongos.read();
 	gcr = bongos.getReport();
 
 	gcr = bongoTest(gcr);
-	Serial.println(gcr.a);
+	digitalWrite(13, gcr.start);
+	//Serial.println(gcr.start);
 
 	//gc.write(gcr);
 }
