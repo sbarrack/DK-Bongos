@@ -96,8 +96,8 @@ void loop()
 	gcr = bongos.getReport();
 
 	gcr = bongoTest(gcr);
-	digitalWrite(13, gcr.start);
-	//Serial.println(gcr.start);
+	digitalWriteFast(13, gcr.start);
+	Serial.println(gcr.start);
 
 	//gc.write(gcr);
 }
