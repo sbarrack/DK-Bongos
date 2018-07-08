@@ -429,34 +429,40 @@ protected:
 	
 	//TODO: change timing based on cpu speed and GPIO port based on pin number
 	//TODO: it doesnt work XP
+	//all data is tranceived MSB first
 	void transceive(uint8_t *command, const int len, uint8_t *data, const int size) {
 		data = new uint8_t[size];
+		uint8_t oldSREG = SREG;
 		cli();
 		//transmit
+		GPIOC_PDDR |= 0xFFFFFFFF;	//pins 9-13,15,22-23,27-30 output
 		for (int i = 0; i < len; i++) {		//bytes
-			for (int j = 5; i < 13; i++) {	//bits
-				GPIOA_PCOR |= 0x1000;	//clear pin 3
+			for (int j = 7; i >= 0; i--) {	//bits
+				GPIOC_PCOR |= 0xFFFFFFFF;	//clear all
 				delayMicros(1);
-				GPIOA_PDOR |= (command[i] << j) & 0x1000; //assign pin 3
+				GPIOA_PDOR |= (command[i] >> j & 1) ? 0xFFFFFFFF : 0; //assign all
 				delayMicros(2);
-				GPIOA_PSOR |= 0x1000;	//set pin 3
+				GPIOA_PSOR |= 0xFFFFFFFF;	//set all
 				delayMicros(1);
 			}
 		}
-		GPIOA_PCOR |= 0x1000;	//stop bit
+		GPIOA_PCOR |= 0xFFFFFFFF;	//stop bit
 		delayMicros(1);
-		GPIOA_PSOR |= 0x1000;
+		GPIOA_PSOR |= 0xFFFFFFFF;
 		//receive
+		GPIOA_PDDR &= 0;	//input
 		for (int i = 0; i < size; i++) {	//bytes
-			for (int j = 5; i < 13; i++) {	//bits
+			for (int j = 7; i >= 0; i--) {	//bits
 				elapsedMicros timeout;
-				while ((0x1000 == (GPIOA_PDIR & 0x1000)) || (timeout < 1000));	//til pin 3 low
+				//using pin 15
+				while ((GPIOA_PDIR & 1) || (timeout < 1000));	//til pin 3 low
 				delayMicros(1);
-				data[i] |= (GPIOA_PDIR & 0x1000) >> j;	//data[i] = pin 3
+				data[i] |= (GPIOA_PDIR & 1) << j;	//data[i] = pin 3
 				delayMicros(2);
 			}
 		}
 		sei();
+		SREG = oldSREG;
 	}
 };
 
