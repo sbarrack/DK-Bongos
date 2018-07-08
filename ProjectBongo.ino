@@ -23,25 +23,25 @@
 	*/
 
 /*TODO: On bongos remap the special attacks, snapback/turnarounds. 
-	Put in Wiimote stuff. Test out keyboard. Make a logic analyzer 
-	out of Teensy to figure out how Maracas work. Get N64 controllers 
-	working too. Uno/Nano functionality (change directives in gcb.cpp).
+	Test out keyboard. Make a logic analyzer out of Teensy to figure out 
+	how Maracas work. Get N64 controllers working too. Uno/Nano 
+	functionality (change directives).
 	*/
 
 #include <Arduino.h>
-#include "gc.h"
+#include "UltraWire.h"
 
 #define buffr 6
 #define buffSize 200
 
-//gcConsole gc(3);
-gcController bongos(2);
+GCConsole gc(3);
+GCController bongos(2);
 
-inline gcReport bongoTest(gcReport r);
-inline gcReport bongofy(gcReport r);
-inline gcReport jalhalla(gcReport r);
-inline gcReport noTapJump(gcReport r);
-inline gcReport tiltStick(gcReport r);
+inline GCReport bongoTest(GCReport r);
+inline GCReport bongofy(GCReport r);
+inline GCReport jalhalla(GCReport r);
+inline GCReport noTapJump(GCReport r);
+inline GCReport tiltStick(GCReport r);
 
 union bongoReport {
 	uint8_t raw[2];
@@ -58,7 +58,7 @@ union bongoReport {
 	};
 };
 
-gcReport gcr;
+GCReport gcr;
 bongoReport bongo;
 bongoReport buff[buffSize];
 int cBuff[buffSize];
@@ -67,15 +67,16 @@ double angle, ang1 = atan2(114, -127), ang2 = atan2(114, 127);
 bool lightShield, shieldOn, nothing, wasPressed, inv, cr, cl, cd, cu, nn, wasn;
 uint8_t xLast, yLast;
 
-static constexpr bongoReport bongoDefRep = { 0, tLow };
+static constexpr bongoReport bongoDefRep = { 0, TRIGGER_LOW - 1 };
+
+Attachment thingy;
 
 void setup()
 {
-	while (!Serial && (millis() < 3000)); // wait until serial port is created
 	Serial.begin(115200);
+	while (!Serial);
 	pinMode(13,OUTPUT);
 	digitalWrite(13,HIGH);
-	delay(500);
 	Serial.println("ProjectBongo  Copyright (C) 2018  Stephen Barrack");
 	Serial.println("This program comes with ABSOLUTELY NO WARRANTY.");
 	Serial.println("This is free software, and you are welcome to redistribute it under certain conditions.");
@@ -87,23 +88,18 @@ void setup()
 	wasn = true;
 	lightShield = shieldOn = wasPressed = inv = cr = cl = cd = cu = nn = false;
 	xLast = yLast = 0;
+
+	thingy.init();
 }
 
 void loop()
 {
-	gcr = gcDefault.report;
-	bongos.read();
-	gcr = bongos.getReport();
-
-	gcr = bongoTest(gcr);
-	digitalWriteFast(13, gcr.start);
-	Serial.println(gcr.start);
-
-	//gc.write(gcr);
+	thingy.poll();
+	digitalWriteFast(13, thingy.c() | thingy.z());
 }
 
-inline gcReport bongoTest(gcReport r) {
-	r = gcDefault.report;
+inline GCReport bongoTest(GCReport r) {
+	r = defaultGCReport;
 	r.a = buff[0].tl;
 	r.b = buff[0].tr;
 	r.x = buff[0].bl;
@@ -114,14 +110,14 @@ inline gcReport bongoTest(gcReport r) {
 	return r;
 }
 
-inline gcReport bongofy(gcReport r) {
+inline GCReport bongofy(GCReport r) {
 	bongo.tl = r.a;
 	bongo.tr = r.b;
 	bongo.bl = r.x;
 	bongo.br = r.y;
 	bongo.start = r.start;
 	bongo.mic = r.right;
-	r = gcDefault.report;
+	r = defaultGCReport;
 	for (int i = buffSize - 1; i > 0; i--)
 		buff[i] = buff[i - 1];
 	buff[0] = bongo;
@@ -132,23 +128,23 @@ inline gcReport bongofy(gcReport r) {
 	//taunt
 	nothing = true;
 	for (int i = 0; i < buffSize; i++) {
-		if (buff[i].tl || buff[i].tr || buff[i].bl || buff[i].br || buff[i].start || buff[i].mic > micHigh) {
+		if (buff[i].tl || buff[i].tr || buff[i].bl || buff[i].br || buff[i].start || buff[i].mic > MIC_HIGH) {
 			nothing = false;
 			break;
 		}
 	}
-	r.dup = nothing;
+	r.du = nothing;
 
 	//light lightShield, sheild
 	c = bongo.tl + bongo.tr + bongo.bl + bongo.br;
 	if (c >= 4 && !shieldOn) {
 		shieldOn = true;
-		lightShield = bongo.mic > sLowNotch;
-		r.right = shieldOn * tHigh;
+		lightShield = bongo.mic > STICK_LOW;
+		r.right = shieldOn ? TRIGGER_FLOOR : TRIGGER_LOW - 1;
 		r.r = !lightShield;
 	}
 	else if (c > 1) {
-		r.right = shieldOn * tHigh;
+		r.right = shieldOn ? MIC_HIGH : TRIGGER_LOW - 1;
 		r.r = shieldOn && !lightShield;
 	}
 	else {
@@ -156,7 +152,7 @@ inline gcReport bongofy(gcReport r) {
 	}
 
 	//A
-	r.a = buff[buffr].mic > micHigh;
+	r.a = buff[buffr].mic > MIC_HIGH;
 
 	//stick
 	c = bongo.br | bongo.bl << 1 | bongo.tr << 2 | bongo.tl << 3;
@@ -172,38 +168,38 @@ inline gcReport bongofy(gcReport r) {
 		if (lightShield || shieldOn) {//lightShield movement
 			switch (cBuff[0]) {
 			case 3://spot dodge
-				r.cyAxis = sMin;
+				r.cyAxis = STICK_MIN;
 				break;
 			case 5://right
-				r.xAxis = sHighNotch;
+				r.xAxis = STICK_HIGH;
 				break;
 			case 6://roll right
-				r.xAxis = sMax;
+				r.xAxis = STICK_MAX;
 				break;
 			case 7://down right
-				r.xAxis = sHighNotch;
-				r.yAxis = sLowNotch;
+				r.xAxis = STICK_HIGH;
+				r.yAxis = STICK_LOW;
 				break;
 			case 9://roll left
-				r.xAxis = sMin;
+				r.xAxis = STICK_MIN;
 				break;
 			case 10://left
-				r.xAxis = sLowNotch;
+				r.xAxis = STICK_LOW;
 				break;
 			case 11://down left
-				r.xAxis = sLowNotch;
-				r.yAxis = sLowNotch;
+				r.xAxis = STICK_LOW;
+				r.yAxis = STICK_LOW;
 				break;
 			case 12://jump
-				r.cyAxis = sMax;
+				r.cyAxis = STICK_MAX;
 				break;
 			case 13://up right
-				r.xAxis = sHighNotch;
-				r.yAxis = syUpperNotch;
+				r.xAxis = STICK_HIGH;
+				r.yAxis = STICK_HIGHER;
 				break;
 			case 14://up left
-				r.xAxis = sLowNotch;
-				r.yAxis = syUpperNotch;
+				r.xAxis = STICK_LOW;
+				r.yAxis = STICK_HIGHER;
 				break;
 			default:
 				break;
@@ -212,48 +208,48 @@ inline gcReport bongofy(gcReport r) {
 		else {//normal movement (may need a buffer, also make moonwalking easier later)
 			switch (cBuff[0]) {
 			case 1://dash right
-				r.xAxis = sMax;
+				r.xAxis = STICK_MAX;
 				break;
 			case 2://dash left
-				r.xAxis = sMin;
+				r.xAxis = STICK_MIN;
 				break;
 			case 3://crouch
-				r.yAxis = sMin;
+				r.yAxis = STICK_MIN;
 				break;
 			case 4://up tilt
-				r.yAxis = syUpperNotch;
+				r.yAxis = STICK_HIGHER;
 				break;
 			case 5://tilt right
-				r.xAxis = sDeadRight;
+				r.xAxis = DEAD_HIGH;
 				break;
 			case 7://down right
-				r.xAxis = sHighNotch;
-				r.yAxis = sLowNotch;
+				r.xAxis = STICK_HIGH;
+				r.yAxis = STICK_LOW;
 				break;
 			case 8://tap jump
 				if (r.a)
 					r.y = 1;
 				else
-					r.yAxis = sMax;
+					r.yAxis = STICK_MAX;
 				break;
 			case 10://tilt left
-				r.xAxis = sDeadLeft;
+				r.xAxis = DEAD_LOW;
 				break;
 			case 11://down left
-				r.xAxis = sLowNotch;
-				r.yAxis = sLowNotch;
+				r.xAxis = STICK_LOW;
+				r.yAxis = STICK_LOW;
 				break;
 			case 12://up b
 				r.b = 1;
-				r.yAxis = sMax;
+				r.yAxis = STICK_MAX;
 				break;
 			case 13://up right
-				r.xAxis = sHighNotch;
-				r.yAxis = syUpperNotch;
+				r.xAxis = STICK_HIGH;
+				r.yAxis = STICK_HIGHER;
 				break;
 			case 14://up left
-				r.xAxis = sLowNotch;
-				r.yAxis = syUpperNotch;
+				r.xAxis = STICK_LOW;
+				r.yAxis = STICK_HIGHER;
 				break;
 			default:
 				break;
@@ -267,15 +263,15 @@ inline gcReport bongofy(gcReport r) {
 		r.yAxis = yLast;
 		if (cBuff[0] == 6) {//side b right, neutral b tap
 			r.b = 1;
-			if (!(bongo.mic > micHigh))
-				r.xAxis = sMax;
+			if (!(bongo.mic > MIC_HIGH))
+				r.xAxis = STICK_MAX;
 		}
 		if (cBuff[0] == 9) {//side b left, down b tap
 			r.b = 1;
-			if (bongo.mic > micHigh)
-				r.yAxis = sMin;
+			if (bongo.mic > MIC_HIGH)
+				r.yAxis = STICK_MIN;
 			else
-				r.xAxis = sMin;
+				r.xAxis = STICK_MIN;
 		}
 	}
 
@@ -293,18 +289,18 @@ inline gcReport bongofy(gcReport r) {
 	return r;
 }
 
-inline gcReport jalhalla(gcReport r) {
-	inv = !wasPressed && r.dright ? !inv : inv;
+inline GCReport jalhalla(GCReport r) {
+	inv = !wasPressed && r.dr ? !inv : inv;
 	if (inv) {
 		r.xAxis = ~r.xAxis;
 		r.yAxis = ~r.yAxis;
 	}
-	wasPressed = r.dright;
+	wasPressed = r.dr;
 	
 	return r;
 }
 
-inline gcReport noTapJump(gcReport r) {
+inline GCReport noTapJump(GCReport r) {
 	y = r.yAxis - 127;
 	if (!(r.x || r.y) && y > 53) {
 		x = r.xAxis - 127;
@@ -318,7 +314,7 @@ inline gcReport noTapJump(gcReport r) {
 	return r;
 }
 
-inline gcReport tiltStick(gcReport r) {
+inline GCReport tiltStick(GCReport r) {
 	cr = r.cxAxis > 170;
 	cl = r.cxAxis < 84;
 	cd = r.cyAxis > 164;
