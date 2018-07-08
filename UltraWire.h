@@ -43,7 +43,7 @@
 #define ANALOG_MIN		0x01
 #define ANALOG_MAX		0xFF	
 #define ANALOG_MID		0x80	//127 is not the center due to the error condition.
-#define TRIGGER_LOW		0x20
+#define TRIGGER_LOW		0x1F
 #define TRIGGER_FLOOR	0x49	//Light-shield is active above this value. 
 #define TRIGGER_CEIL	0xFF	//TODO: need to find value just before the trigger button goes high
 #define MIC_HIGH		0x6F
@@ -289,9 +289,9 @@ struct GCData {
 	GCStatus status;
 };
 
-static constexpr GCReport defaultGCReport = { 0, 0x80, ANALOG_MID, ANALOG_MID, ANALOG_MID, ANALOG_MID, TRIGGER_LOW - 1, TRIGGER_LOW - 1 };
-static constexpr GCOrigin defaultOrigin = { 0, 0x80, ANALOG_MID, ANALOG_MID, ANALOG_MID, ANALOG_MID, TRIGGER_LOW - 1, TRIGGER_LOW - 1, ANALOG_MID, ANALOG_MID };
-static constexpr GCStatus defaultGCControllerStatus = { GCC, 0x03 };
+static constexpr GCReport defaultGCReport = { 0, 0x80, ANALOG_MID, ANALOG_MID, ANALOG_MID, ANALOG_MID, TRIGGER_LOW, TRIGGER_LOW };
+static constexpr GCOrigin defaultOrigin = { 0, 0x80, ANALOG_MID, ANALOG_MID, ANALOG_MID, ANALOG_MID, TRIGGER_LOW, TRIGGER_LOW, ANALOG_MID, ANALOG_MID };
+static constexpr GCStatus defaultGCControllerStatus = { 9, 0, 3 };
 static constexpr GCData defaultGCControllerData = { defaultGCReport, defaultOrigin, defaultGCControllerStatus };
 
 //TODO: allow for seperate wire initialization based on different 
@@ -345,9 +345,9 @@ public:
 	//axes
 	uint8_t xAxis() { return raw[0]; }
 	uint8_t yAxis() { return raw[1]; }
-	uint16_t ax() { return ((uint16_t)raw[2] & 0x00FF) << 2 | raw[5] >> 2 & 3; }
-	uint16_t ay() { return ((uint16_t)raw[3] & 0x00FF) << 2 | raw[5] >> 4 & 3; }
-	uint16_t az() { return ((uint16_t)raw[4] & 0x00FF) << 2 | raw[5] >> 6 & 3; }
+	uint16_t ax() { return (((uint16_t)raw[2] & 0x00FF) << 2) | (raw[5] >> 2 & 3); }
+	uint16_t ay() { return (((uint16_t)raw[3] & 0x00FF) << 2) | (raw[5] >> 4 & 3); }
+	uint16_t az() { return (((uint16_t)raw[4] & 0x00FF) << 2) | (raw[5] >> 6 & 3); }
 
 	//adjusted to be full byte prescision
 	//TODO: check for bugs with remaps/macros
@@ -399,22 +399,71 @@ public:
 	GCReport getReport() { return report; }
 	GCOrigin getOrigin() { return origin; }
 	GCStatus getStatus() { return status; }
+	//TODO: inplement n64 data
 	GCData getData() {
-		GCData* pointer = this;
+		GCData *pointer = this;
 		GCData data;
 		memcpy(&data, pointer, sizeof(data));
 		return data;
 	}
+	void init() {
+		uint8_t command[] = { 0x00 };
+		transceive(command, sizeof(command), status.raw, sizeof(status.raw));
+	}
+	void recenter() {
+		uint8_t command[] = { 0x41 };
+		transceive(command, sizeof(command), origin.raw, sizeof(origin.raw));
+	}
+	void poll() {
+		uint8_t command[] = { 0x43 };
+		transceive(command, sizeof(command), report.raw, sizeof(report.raw));
+	}
+	void scan() {
+		uint8_t command[] = { 0x54 };
+		transceive(command, sizeof(command), report.raw, sizeof(report.raw));
+	}
 
 protected:
 	const int pin;
-	friend class GCConsole;
+	//friend class GCConsole;
+	
+	//TODO: change timing based on cpu speed and GPIO port based on pin number
+	//TODO: it doesnt work XP
+	void transceive(uint8_t *command, const int len, uint8_t *data, const int size) {
+		data = new uint8_t[size];
+		cli();
+		//transmit
+		for (int i = 0; i < len; i++) {		//bytes
+			for (int j = 5; i < 13; i++) {	//bits
+				GPIOA_PCOR |= 0x1000;	//clear pin 3
+				delayMicros(1);
+				GPIOA_PDOR |= (command[i] << j) & 0x1000; //assign pin 3
+				delayMicros(2);
+				GPIOA_PSOR |= 0x1000;	//set pin 3
+				delayMicros(1);
+			}
+		}
+		GPIOA_PCOR |= 0x1000;	//stop bit
+		delayMicros(1);
+		GPIOA_PSOR |= 0x1000;
+		//receive
+		for (int i = 0; i < size; i++) {	//bytes
+			for (int j = 5; i < 13; i++) {	//bits
+				elapsedMicros timeout;
+				while ((0x1000 == (GPIOA_PDIR & 0x1000)) || (timeout < 1000));	//til pin 3 low
+				delayMicros(1);
+				data[i] |= (GPIOA_PDIR & 0x1000) >> j;	//data[i] = pin 3
+				delayMicros(2);
+			}
+		}
+		sei();
+	}
 };
 
-class GCConsole {
+/*class GCConsole {
 public:
 	GCConsole(const int pin) : pin(pin) {}
 
 protected:
 	const int pin;
-};
+};*/

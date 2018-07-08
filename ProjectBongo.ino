@@ -34,8 +34,7 @@
 #define buffr 6
 #define buffSize 200
 
-GCConsole gc(3);
-GCController bongos(2);
+GCController controller(3);
 
 inline GCReport bongoTest(GCReport r);
 inline GCReport bongofy(GCReport r);
@@ -67,35 +66,37 @@ double angle, ang1 = atan2(114, -127), ang2 = atan2(114, 127);
 bool lightShield, shieldOn, nothing, wasPressed, inv, cr, cl, cd, cu, nn, wasn;
 uint8_t xLast, yLast;
 
-static constexpr bongoReport bongoDefRep = { 0, TRIGGER_LOW - 1 };
+static constexpr bongoReport bongoDefRep = { 0, TRIGGER_LOW };
 
-Attachment thingy;
+Attachment attachment;
 
 void setup()
 {
 	Serial.begin(115200);
 	while (!Serial);
-	pinMode(13,OUTPUT);
-	digitalWrite(13,HIGH);
+	pinMode(13, OUTPUT);
+	digitalWriteFast(13, HIGH);
 	Serial.println("ProjectBongo  Copyright (C) 2018  Stephen Barrack");
 	Serial.println("This program comes with ABSOLUTELY NO WARRANTY.");
 	Serial.println("This is free software, and you are welcome to redistribute it under certain conditions.");
 	Serial.println("View README and LICENSE included with this project for full details.");
 	delay(3000);
-	digitalWrite(13,LOW);
+	digitalWrite(13, LOW);
 	
 	bongo = bongoDefRep;
 	wasn = true;
 	lightShield = shieldOn = wasPressed = inv = cr = cl = cd = cu = nn = false;
 	xLast = yLast = 0;
 
-	thingy.init();
+	controller.init();
+	Serial.print(controller.getStatus().device, HEX);
+	delay(100000);
 }
 
 void loop()
 {
-	thingy.poll();
-	digitalWriteFast(13, thingy.c() | thingy.z());
+	controller.poll();
+	digitalWriteFast(13, controller.getReport().a);
 }
 
 inline GCReport bongoTest(GCReport r) {
@@ -106,7 +107,6 @@ inline GCReport bongoTest(GCReport r) {
 	r.y = buff[0].br;
 	r.start = buff[0].start;
 	r.right = buff[0].mic;
-
 	return r;
 }
 
@@ -140,11 +140,11 @@ inline GCReport bongofy(GCReport r) {
 	if (c >= 4 && !shieldOn) {
 		shieldOn = true;
 		lightShield = bongo.mic > STICK_LOW;
-		r.right = shieldOn ? TRIGGER_FLOOR : TRIGGER_LOW - 1;
+		r.right = shieldOn ? TRIGGER_FLOOR : TRIGGER_LOW;
 		r.r = !lightShield;
 	}
 	else if (c > 1) {
-		r.right = shieldOn ? MIC_HIGH : TRIGGER_LOW - 1;
+		r.right = shieldOn ? MIC_HIGH : TRIGGER_LOW;
 		r.r = shieldOn && !lightShield;
 	}
 	else {
@@ -296,7 +296,6 @@ inline GCReport jalhalla(GCReport r) {
 		r.yAxis = ~r.yAxis;
 	}
 	wasPressed = r.dr;
-	
 	return r;
 }
 
@@ -310,7 +309,6 @@ inline GCReport noTapJump(GCReport r) {
 			r.yAxis = 180;
 		}
 	}
-
 	return r;
 }
 
@@ -347,6 +345,5 @@ inline GCReport tiltStick(GCReport r) {
 	if (!nn) wasn = true;
 	r.cxAxis = 128;
 	r.cyAxis = 128;
-
 	return r;
 }
