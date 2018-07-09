@@ -34,7 +34,8 @@
 #define buffr 6
 #define buffSize 200
 
-GCController controller(3);
+GCController controller(12);
+Attachment attachment;
 
 inline GCReport bongoTest(GCReport r);
 inline GCReport bongofy(GCReport r);
@@ -68,8 +69,6 @@ uint8_t xLast, yLast;
 
 static constexpr bongoReport bongoDefRep = { 0, TRIGGER_LOW };
 
-Attachment attachment;
-
 void setup()
 {
 	Serial.begin(115200);
@@ -87,16 +86,12 @@ void setup()
 	wasn = true;
 	lightShield = shieldOn = wasPressed = inv = cr = cl = cd = cu = nn = false;
 	xLast = yLast = 0;
-
-	controller.init();
-	Serial.print(controller.getStatus().device, HEX);
-	delay(100000);
 }
 
 void loop()
 {
 	controller.poll();
-	digitalWriteFast(13, controller.getReport().a);
+	digitalWriteFast(13, controller.getReport().start);
 }
 
 inline GCReport bongoTest(GCReport r) {

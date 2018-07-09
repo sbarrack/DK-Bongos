@@ -25,7 +25,10 @@
 	it is simply a faster version of the 1-Wire Interface from MSB to LSB
 	(https://en.wikipedia.org/wiki/1-Wire). Additionally, Wii Remote
 	attachment controllers use the 2-Wire Interface (TWI/I2C) which is
-	supported by Teensy.
+	supported by Teensy. Timing for ARM instructions can be found here
+	(http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.ddi0439b/CHDDIGAC.html)
+	while usage can be found in the reference manual section A7.7
+	(https://www.pjrc.com/teensy/beta/DDI0403D_arm_architecture_v7m_reference_manual.pdf).
 
 	Controllers: GC GCController, DK Bongos, GC Keyboard (not tested),
 	Nunchuck, Classic GCController
@@ -35,8 +38,22 @@
 #pragma once
 #include <i2c_t3.h>
 
+//useful macros
 #define delayMicros(us) delayMicroseconds(us)
-#define restart (*(volatile uint32_t*)0xE000ED0C) = 0x05FA0004	//soft-resets the arduino
+#define SOFT_RESET() (*(volatile uint32_t*)0xE000ED0C) = 0x05FA0004
+
+//assembly macros
+#define GPIO_BITBAND_ADDR(reg, bit) \
+	(((uint32_t)&(reg) - 0x40000000) * 32 + (bit) * 4 + 0x42000000)
+#define LINE_CLEAR	"str %4, [%2, 4] \n"
+#define LINE_SET	"str %4, [%2, 4] \n"
+//1us at 120MHz is 120 cycles (screw minor details), 4 + (2 + p) * r2 + nops = 120
+#define WAIT "ldr r2, =38 \n1: \nsubs r2, #1 \nbne 1b \nnop \nnop \n"
+#define SEND_0 LINE_CLEAR WAIT WAIT WAIT LINE_SET WAIT
+#define SEND_1 LINE_CLEAR WAIT LINE_SET WAIT WAIT WAIT
+//just read in the middle of the period instead of waiting for the edge
+#define GET_BIT WAIT WAIT "ldr r1, [%3] \nstr r1, [%0] \nadd %0, %0, #4 \n" WAIT WAIT
+#define GET_BYTE GET_BIT GET_BIT GET_BIT GET_BIT GET_BIT GET_BIT GET_BIT GET_BIT
 
 //analog values
 #define ANALOG_ERROR	0x00	//The controller disconnects if any analog sensor fails.
@@ -333,7 +350,7 @@ public:
 		Wire.write(0xF0);
 		Wire.write(0x55);
 		if (Wire.endTransmission())
-			restart;
+			SOFT_RESET();
 		Wire.beginTransmission(CON);
 		Wire.write(0xFB);
 		Wire.write(0);
@@ -389,7 +406,7 @@ protected:
 		for (int i = 0; i < 6; i++)
 			c &= raw[i];
 		if (c == 0xFF)
-			restart;
+			SOFT_RESET();
 	}
 };
 
@@ -427,41 +444,33 @@ protected:
 	const int pin;
 	//friend class GCConsole;
 	
-	//TODO: change timing based on cpu speed and GPIO port based on pin number
-	//TODO: it doesnt work XP
 	//all data is tranceived MSB first
-	void transceive(uint8_t *command, const int len, uint8_t *data, const int size) {
+	//TODO: make it actually send/get the data you want
+	static inline void transceive(uint8_t *command, const int len, uint8_t *data, const int size) {
+		static uint32_t modeReg = GPIO_BITBAND_ADDR(CORE_PIN12_PORTREG, CORE_PIN12_BIT);
 		data = new uint8_t[size];
 		uint8_t oldSREG = SREG;
 		cli();
-		//transmit
-		GPIOC_PDDR |= 0xFFFFFFFF;	//pins 9-13,15,22-23,27-30 output
-		for (int i = 0; i < len; i++) {		//bytes
-			for (int j = 7; i >= 0; i--) {	//bits
-				GPIOC_PCOR |= 0xFFFFFFFF;	//clear all
-				delayMicros(1);
-				GPIOA_PDOR |= (command[i] >> j & 1) ? 0xFFFFFFFF : 0; //assign all
-				delayMicros(2);
-				GPIOA_PSOR |= 0xFFFFFFFF;	//set all
-				delayMicros(1);
-			}
-		}
-		GPIOA_PCOR |= 0xFFFFFFFF;	//stop bit
-		delayMicros(1);
-		GPIOA_PSOR |= 0xFFFFFFFF;
-		//receive
-		GPIOA_PDDR &= 0;	//input
-		for (int i = 0; i < size; i++) {	//bytes
-			for (int j = 7; i >= 0; i--) {	//bits
-				elapsedMicros timeout;
-				//using pin 15
-				while ((GPIOA_PDIR & 1) || (timeout < 1000));	//til pin 3 low
-				delayMicros(1);
-				data[i] |= (GPIOA_PDIR & 1) << j;	//data[i] = pin 3
-				delayMicros(2);
-			}
-		}
-		sei();
+		__disable_irq();
+		__asm__ volatile(
+			"ldr r0, =0 \n"	//r0 = 0
+			"ldr r1, =1 \n"	//r1 = 1
+			"str r0, [%1] \n"	//output mode
+			//transmit
+			//0x43, poll
+			SEND_0 SEND_1 SEND_0 SEND_0	//4
+			SEND_0 SEND_0 SEND_1 SEND_1	//3
+			SEND_1	//stop
+			//receive
+			//report
+			GET_BYTE GET_BYTE GET_BYTE GET_BYTE GET_BYTE GET_BYTE	//6
+			//".pool \n"
+			:
+			: "r" (data), "r" (modeReg), "r" (&CORE_PIN12_PORTSET), 
+				"r" (&CORE_PIN12_PINREG), "r" (CORE_PIN12_BITMASK)
+			: "r0", "r1", "r2"
+		);
+		__enable_irq();
 		SREG = oldSREG;
 	}
 };
