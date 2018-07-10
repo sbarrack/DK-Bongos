@@ -86,12 +86,13 @@ void setup()
 	wasn = true;
 	lightShield = shieldOn = wasPressed = inv = cr = cl = cd = cu = nn = false;
 	xLast = yLast = 0;
+
+	controller.init();
 }
 
 void loop()
 {
-	controller.poll();
-	digitalWriteFast(13, controller.getReport().start);
+	digitalWriteFast(13, controller.pollOld()[0] >> 7 & 1);
 }
 
 inline GCReport bongoTest(GCReport r) {
