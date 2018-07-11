@@ -1,5 +1,7 @@
-/*	This is ProjectBongo; a program dedicated to the functionality of Donkey Kong Bongos and beyond.
-    Copyright (C) 2018  Stephen Barrack
+/*	This is ProjectBongo; a program dedicated to the functionality of
+	Donkey Kong Bongos and other game controllers.
+
+	Copyright (C) 2018  Stephen Barrack
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -23,12 +25,10 @@
 	*/
 
 /*TODO: On bongos remap the special attacks, snapback/turnarounds. 
-	Test out keyboard. Make a logic analyzer out of Teensy to figure out 
-	how Maracas work. Get N64 controllers working too. Uno/Nano 
-	functionality (change directives).
+	Make a logic analyzer out of Teensy to figure out how 
+	Dreamcast Maracas work.
 	*/
 
-#include <Arduino.h>
 #include "UltraWire.h"
 
 #define buffr 6
@@ -75,24 +75,22 @@ void setup()
 	while (!Serial);
 	pinMode(13, OUTPUT);
 	digitalWriteFast(13, HIGH);
-	Serial.println("ProjectBongo  Copyright (C) 2018  Stephen Barrack");
+	Serial.println("ProjectBongo | Copyright (C) 2018 | Stephen Barrack");
 	Serial.println("This program comes with ABSOLUTELY NO WARRANTY.");
 	Serial.println("This is free software, and you are welcome to redistribute it under certain conditions.");
 	Serial.println("View README and LICENSE included with this project for full details.");
-	delay(3000);
-	digitalWrite(13, LOW);
+	delay(1000);
+	digitalWriteFast(13, LOW);
 	
 	bongo = bongoDefRep;
 	wasn = true;
 	lightShield = shieldOn = wasPressed = inv = cr = cl = cd = cu = nn = false;
 	xLast = yLast = 0;
-
-	controller.init();
 }
 
 void loop()
 {
-	digitalWriteFast(13, controller.pollOld()[0] >> 7 & 1);
+	digitalWriteFast(13, HIGH);
 }
 
 inline GCReport bongoTest(GCReport r) {
