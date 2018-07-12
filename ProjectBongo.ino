@@ -34,15 +34,15 @@
 #define buffr 6
 #define buffSize 200
 
-GCController controller(12);
-Attachment attachment;
-
+//GCController controller(12);
+WiiAttachment attachment;
+/*
 inline GCReport bongoTest(GCReport r);
 inline GCReport bongofy(GCReport r);
 inline GCReport jalhalla(GCReport r);
 inline GCReport noTapJump(GCReport r);
 inline GCReport tiltStick(GCReport r);
-
+*/
 union bongoReport {
 	uint8_t raw[2];
 
@@ -58,7 +58,7 @@ union bongoReport {
 	};
 };
 
-GCReport gcr;
+//GCReport gcr;
 bongoReport bongo;
 bongoReport buff[buffSize];
 int cBuff[buffSize];
@@ -86,13 +86,16 @@ void setup()
 	wasn = true;
 	lightShield = shieldOn = wasPressed = inv = cr = cl = cd = cu = nn = false;
 	xLast = yLast = 0;
+
+	attachment.init();
 }
 
 void loop()
 {
-	digitalWriteFast(13, HIGH);
+	attachment.poll();
+	//digitalWriteFast(13, HIGH);
 }
-
+/*
 inline GCReport bongoTest(GCReport r) {
 	r = defaultGCReport;
 	r.a = buff[0].tl;
@@ -341,3 +344,4 @@ inline GCReport tiltStick(GCReport r) {
 	r.cyAxis = 128;
 	return r;
 }
+*/
