@@ -1,11 +1,9 @@
-const status defaultgcstatus = { GCC, 3 };
-const gcorigin defaultgcorigin = { 0, 0x80, ANALOG_MID, ANALOG_MID, ANALOG_MID, ANALOG_MID, TRIGGER_LOW, TRIGGER_LOW, 0, 0 };
-const gcreport defaultgcreport = { 0, 0x80, ANALOG_MID, ANALOG_MID, ANALOG_MID, ANALOG_MID, TRIGGER_LOW, TRIGGER_LOW };
-const n64report defaultn64report = { 0, 0, ANALOG_MID, ANALOG_MID };
+const uint8_t defstate[3] = { N64C, 0 };
+const uint8_t defreport[4] = { 0, 0, ANALOG_MID, ANALOG_MID };
+const status defstate = { GCC, 3 };
+const gcreport defreport = { 0, 0x80, ANALOG_MID, ANALOG_MID, ANALOG_MID, ANALOG_MID, TRIGGER_LOW, TRIGGER_LOW };
+const gcorigin deforigin = { 0, 0x80, ANALOG_MID, ANALOG_MID, ANALOG_MID, ANALOG_MID, TRIGGER_LOW, TRIGGER_LOW, 0, 0 };
 
-
-/*poll in terms of each port register and recommend to put all 1wire
-controllers on a single port, C is good*/
 class GCController : protected gcdata {
 public:
 	GCController(const int pin) : pin(pin) {
@@ -460,32 +458,6 @@ public:
 			bitmask = CORE_PIN63_BITMASK;
 		}
 	}
-	gcreport getReport() { return report; }
-	gcorigin getOrigin() { return origin; }
-	status getStatus() { return state; }
-	//TODO: inplement n64 data
-	gcdata getData() {
-		gcdata *pointer = this;
-		gcdata data;
-		memcpy(&data, pointer, sizeof(data));
-		return data;
-	}
-	void init() {
-		uint8_t command[] = { 0x00 };
-	}
-	void pollN64() {
-		uint8_t command[] = { 0x01 };
-	}
-	void recenter() {
-		uint8_t command[] = { 0x41 };
-	}
-	void poll() {
-		uint8_t command[] = { 0x43 };
-	}
-	void scan() {
-		uint8_t command[] = { 0x54 };
-	}
-
 protected:
 	const int pin;
 	uint32_t modeReg, bitmask, corePin;

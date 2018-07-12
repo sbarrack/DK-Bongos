@@ -91,6 +91,7 @@ void setup() {
 	Serial.begin(115200);
 	while (!Serial);
 
+	//PORTC MUX, not sure what this does but maybe it's important
 	CORE_PIN12_CONFIG = PORT_PCR_MUX(1);
 }
 

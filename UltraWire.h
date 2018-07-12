@@ -42,7 +42,7 @@
 	[7] https://sites.google.com/site/consoleprotocols/home/techinfo/nintendo-joy-bus-documentation?authuser=0
 
 	Controllers: GC GCController, DK Bongos, GC Keyboard (not tested),
-	Nunchuck, Classic Controller, N64 Controller
+	Nunchuck, Classic Controller, N64 Controller, GBA (not tested)
 	Arduinos: Teensy 3.5 120MHz
 	*/
 
@@ -282,26 +282,26 @@ union n64report {
 	uint32_t raw32[1];
 
 	struct {
-		uint8_t a : 1;
-		uint8_t b : 1;
-		uint8_t z : 1;
-		uint8_t start : 1;
-		uint8_t du : 1;
-		uint8_t dd : 1;
-		uint8_t dl : 1;
 		uint8_t dr : 1;
+		uint8_t dl : 1;
+		uint8_t dd : 1;
+		uint8_t du : 1;
+		uint8_t start : 1;
+		uint8_t z : 1;
+		uint8_t b : 1;
+		uint8_t a : 1;
 
-		uint8_t reset : 1;	//l+r+start
+		uint8_t cr : 1;
+		uint8_t cl : 1;
+		uint8_t cd : 1;
+		uint8_t cu : 1;
+		uint8_t r : 1;
+		uint8_t l : 1;
 		uint8_t : 1;
-				  uint8_t l : 1;
-				  uint8_t r : 1;
-				  uint8_t cu : 1;
-				  uint8_t cd : 1;
-				  uint8_t cl : 1;
-				  uint8_t cr : 1;
+		uint8_t reset : 1;	//l+r+start
 
-				  uint8_t sx;
-				  uint8_t sy;
+		uint8_t sx;
+		uint8_t sy;
 	};
 };
 
@@ -338,35 +338,101 @@ struct ccreport{
 	uint32_t rt : 5;
 
 	union {
-		uint8_t buttons[2];
+		uint8_t buttons[2] = { 1, 0 };
 
 		struct {
-			uint8_t dr : 1;
-			uint8_t dd : 1;
-			uint8_t l : 1;
-			uint8_t select : 1;
-			uint8_t home : 1;
-			uint8_t start : 1;
-			uint8_t r : 1;
 			uint8_t : 1;
+			uint8_t r : 1;
+			uint8_t start : 1;
+			uint8_t home : 1;
+			uint8_t select : 1;
+			uint8_t l : 1;
+			uint8_t dd : 1;
+			uint8_t dr : 1;
 
-			uint8_t zl : 1;
-			uint8_t b : 1;
-			uint8_t y : 1;
-			uint8_t a : 1;
-			uint8_t x : 1;
-			uint8_t zr : 1;
-			uint8_t dl : 1;
 			uint8_t du : 1;
+			uint8_t dl : 1;
+			uint8_t zr : 1;
+			uint8_t x : 1;
+			uint8_t a : 1;
+			uint8_t y : 1;
+			uint8_t b : 1;
+			uint8_t zl : 1;
 		};
 	};
 };
 
-//gc, n64 classes here
+//poll in terms of each port register
+class Controller {
+public:
+	status state;
+	Controller() : pin(12) {}
+	Controller(const int pin) : pin(pin) {}
+	void init() {
+		uint8_t command[] = { 0 };
+		transceive(command);
+	}
+protected:
+	const int pin;
+	uint32_t buffer[80];
+	//TODO: make it wait based on F_CPU
+	//NOTE: everything on this arm core is 32-bit, do everything in words
+	inline void transceive(uint8_t *command) {
+
+		uint8_t oldSREG = SREG;
+		cli();
+		__asm__ volatile(
+			""
+			:
+			:
+			:
+			);
+		SREG = oldSREG;
+
+	}
+
+};
+
+class N64Controller : public Controller {
+public:
+	n64report report;
+	N64Controller() : Controller() {}
+	N64Controller(const int pin) : Controller(pin) {}
+	void poll() {
+		uint8_t command[] = { 1 };
+		transceive(command);
+	}
+protected:
+
+};
+
+class GCController : public Controller {
+public:
+	gcorigin origin;
+	gcreport report;
+	GCController() : Controller() {}
+	GCController(const int pin) : Controller(pin) {}
+	void center() {
+		uint8_t command[] = { 0x41 };
+		transceive(command);
+	}
+	void poll() {
+		uint8_t command[] = { 0x43 };
+		transceive(command);
+	}
+	void scan() {
+		uint8_t command[] = { 0x54 };
+		transceive(command);
+	}
+protected:
+
+};
 
 //TODO: check timings for different frequencies
 class WiiAttachment {
 public:
+	uint8_t raw[6];
+	uint8_t id[6];
 	WiiAttachment() : wire(Wire), pins(I2C_PINS_16_17) {}
 	WiiAttachment(i2c_t3 wire, i2c_pins pins) : 
 		wire(wire), pins(pins) {}
@@ -379,53 +445,40 @@ public:
 		wire.requestFrom(CON, 6);
 		wire.readBytes(id, 6);
 		checkReset();
-		//TODO: sometimes it doesnt send the right id
-		//	iterrupts off? bad pullups (use 5kohm)? longer delay?
-		/*Serial.print("Using ID ");
-		for (int i = 0; i < 6; i++) {
-			if(id[i] < 16)
-				Serial.print(0);
-			Serial.print(id[i], HEX);
-		}
-		int c = 0;
-		for (int i = 0; i < 6; i++)
-			if (id[i] == classicPro[i])
-				c++;
-		if (c == 6)
-			Serial.print("YAY");*/
 	}
 	void poll() {
-		wire.beginTransmission(CON);
-		wire.write(0);
-		while (wire.endTransmission());
+		int i = 0;
+		Wire.beginTransmission(CON);
+		Wire.write(0);
+		while (Wire.endTransmission()) { Serial.print(i++); };
 		delayMicros(157);
-		wire.requestFrom(CON, 6);
-		wire.readBytes(raw, 6);
+		Wire.requestFrom(CON, 6);
+		Wire.readBytes(raw, 6);
 		updateReport();
 		checkReset();
 	}
 	//starts attachment unencrypted
 	void init() {
-		wire.begin(I2C_MASTER, 0, pins, I2C_PULLUP_EXT, 400000);
-		wire.beginTransmission(CON);
-		wire.write(0xF0);
-		wire.write(0x55);
-		if (wire.endTransmission())
+		Wire.begin(I2C_MASTER, 0, pins, I2C_PULLUP_EXT, 400000);
+		Wire.beginTransmission(CON);
+		Wire.write(0xF0);
+		Wire.write(0x55);
+		if (Wire.endTransmission()) {
 			//SOFT_RESET();
 			init();
-		wire.beginTransmission(CON);
-		wire.write(0xFB);
-		wire.write(0);
-		while (wire.endTransmission());
-		identify();
+			return;
+		}
+		Wire.beginTransmission(CON);
+		Wire.write(0xFB);
+		Wire.write(0);
+		while (Wire.endTransmission());
+		//identify();
 		poll();
 	}
 protected:
 	i2c_t3 wire;
 	i2c_pins pins;
-	uint8_t raw[6];
-	uint8_t id[6];
-	virtual void updateReport() {}
+	void updateReport() {}
 	void checkReset() {
 		uint8_t c = 0xFF;
 		for (int i = 0; i < 6; i++)
@@ -436,13 +489,12 @@ protected:
 	}
 };
 
-class Nunchuck : public WiiAttachment, public ncreport {
+class Nunchuck : public WiiAttachment {
 public:
+	ncreport report;
 	Nunchuck() : WiiAttachment() {}
 	Nunchuck(i2c_t3 wire, i2c_pins pins) : WiiAttachment(wire, pins) {}
-private:
-	const ncreport def = { ANALOG_MID, ANALOG_MID, 512, 512, 512, 0, 0 };
-	ncreport report = def;
+protected:
 	void updateReport() {
 		report.sx = raw[0];
 		report.sy = raw[1];
@@ -458,12 +510,11 @@ private:
 
 class ClassicController : public WiiAttachment {
 public:
+	ccreport report;
 	ClassicController() : WiiAttachment() {}
 	ClassicController(i2c_t3 wire, i2c_pins pins) : 
 		WiiAttachment(wire, pins) {}
-private:
-	const ccreport def = { 0x20, 0x20, 0x10, 0x10, 0, 0, 0x01, 0x00 };
-	ccreport report = def;
+protected:
 	void updateReport() {
 		report.sx = raw[0];
 		report.sy = raw[1];

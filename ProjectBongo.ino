@@ -93,7 +93,8 @@ void setup()
 void loop()
 {
 	cc.poll();
-	//digitalWriteFast(13, HIGH);
+	digitalWriteFast(13, cc.report.a);
+	delay(2000);
 }
 /*
 inline GCReport bongoTest(GCReport r) {
