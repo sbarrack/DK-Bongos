@@ -216,7 +216,7 @@ const uint8_t graphicTablet[6] = { 0xFF, 0, 0xA4, 0x20, 0, 0x13 };*/
 #define GCKB_RETURN			0x61
 #define GCKB_NUMLOCK		0x6A*/
 
-typedef union {
+union status {
 	uint8_t raw[3];
 
 	struct {
@@ -232,37 +232,9 @@ typedef union {
 			};
 		};
 	};
-} status;
+};
 
-typedef union {
-	uint8_t raw[4];
-	uint32_t raw32[1];
-
-	struct {
-		uint8_t a : 1;
-		uint8_t b : 1;
-		uint8_t z : 1;
-		uint8_t start : 1;
-		uint8_t du : 1;
-		uint8_t dd : 1;
-		uint8_t dl : 1;
-		uint8_t dr : 1;
-
-		uint8_t reset : 1;	//l+r+start
-		uint8_t : 1;
-		uint8_t l : 1;
-		uint8_t r : 1;
-		uint8_t cu : 1;
-		uint8_t cd : 1;
-		uint8_t cl : 1;
-		uint8_t cr : 1;
-
-		uint8_t sx;
-		uint8_t sy;
-	};
-} n64report;
-
-typedef union {
+union gcreport {
 	uint8_t raw[8];
 	uint32_t raw32[2];
 
@@ -292,9 +264,9 @@ typedef union {
 		uint8_t lt;	//key3
 		uint8_t rt;	//mic
 	};
-} gcreport;
+};
 
-typedef union {
+union gcorigin {
 	uint8_t raw[10];
 
 	struct {
@@ -303,7 +275,35 @@ typedef union {
 		uint8_t deadzone0;
 		uint8_t deadzone1;
 	};
-} gcorigin;
+};
+
+union n64report {
+	uint8_t raw[4];
+	uint32_t raw32[1];
+
+	struct {
+		uint8_t a : 1;
+		uint8_t b : 1;
+		uint8_t z : 1;
+		uint8_t start : 1;
+		uint8_t du : 1;
+		uint8_t dd : 1;
+		uint8_t dl : 1;
+		uint8_t dr : 1;
+
+		uint8_t reset : 1;	//l+r+start
+		uint8_t : 1;
+				  uint8_t l : 1;
+				  uint8_t r : 1;
+				  uint8_t cu : 1;
+				  uint8_t cd : 1;
+				  uint8_t cl : 1;
+				  uint8_t cr : 1;
+
+				  uint8_t sx;
+				  uint8_t sy;
+	};
+};
 
 struct n64data {
 	status state;
@@ -362,23 +362,14 @@ struct ccreport{
 	};
 };
 
-typedef union {
-	ncreport nunchuck;
-	ccreport classic;
-} wiireport;
-
-constexpr status defaultgcstatus = { GCC, 3 };
-constexpr gcorigin defaultgcorigin = { 0, 0x80, ANALOG_MID, ANALOG_MID, ANALOG_MID, ANALOG_MID, TRIGGER_LOW, TRIGGER_LOW, 0, 0 };
-constexpr gcreport defaultgcreport = { 0, 0x80, ANALOG_MID, ANALOG_MID, ANALOG_MID, ANALOG_MID, TRIGGER_LOW, TRIGGER_LOW };
-constexpr n64report defaultn64report = { 0, 0, ANALOG_MID, ANALOG_MID };
+//gc, n64 classes here
 
 //TODO: check timings for different frequencies
-//default pins are 16 SCL0, 17 SDA0
 class WiiAttachment {
 public:
 	WiiAttachment() : wire(Wire), pins(I2C_PINS_16_17) {}
-	WiiAttachment(i2c_t3 wire, i2c_pins pins) : wire(wire), pins(pins) {}
-	
+	WiiAttachment(i2c_t3 wire, i2c_pins pins) : 
+		wire(wire), pins(pins) {}
 	void identify() {
 		wire.beginTransmission(CON);
 		wire.write(0xFA);
@@ -403,7 +394,6 @@ public:
 		if (c == 6)
 			Serial.print("YAY");*/
 	}
-
 	void poll() {
 		wire.beginTransmission(CON);
 		wire.write(0);
@@ -411,10 +401,9 @@ public:
 		delayMicros(157);
 		wire.requestFrom(CON, 6);
 		wire.readBytes(raw, 6);
-		//TODO: update report based on id
+		updateReport();
 		checkReset();
 	}
-
 	//starts attachment unencrypted
 	void init() {
 		wire.begin(I2C_MASTER, 0, pins, I2C_PULLUP_EXT, 400000);
@@ -431,14 +420,12 @@ public:
 		identify();
 		poll();
 	}
-
 protected:
 	i2c_t3 wire;
 	i2c_pins pins;
 	uint8_t raw[6];
 	uint8_t id[6];
-	wiireport report;	//don't necessarily need to shift bits into place
-
+	virtual void updateReport() {}
 	void checkReset() {
 		uint8_t c = 0xFF;
 		for (int i = 0; i < 6; i++)
@@ -446,5 +433,47 @@ protected:
 		if (c == 0xFF)
 			//SOFT_RESET();
 			init();
+	}
+};
+
+class Nunchuck : public WiiAttachment, public ncreport {
+public:
+	Nunchuck() : WiiAttachment() {}
+	Nunchuck(i2c_t3 wire, i2c_pins pins) : WiiAttachment(wire, pins) {}
+private:
+	const ncreport def = { ANALOG_MID, ANALOG_MID, 512, 512, 512, 0, 0 };
+	ncreport report = def;
+	void updateReport() {
+		report.sx = raw[0];
+		report.sy = raw[1];
+
+		report.ax = raw[2] << 2 | (raw[5] >> 2 & 3);
+		report.ay = raw[3] << 2 | (raw[5] >> 4 & 3);
+		report.az = raw[4] << 2 | raw[5] >> 6;
+
+		report.c = ~raw[5] >> 1;
+		report.z = ~raw[5];
+ 	}
+};
+
+class ClassicController : public WiiAttachment {
+public:
+	ClassicController() : WiiAttachment() {}
+	ClassicController(i2c_t3 wire, i2c_pins pins) : 
+		WiiAttachment(wire, pins) {}
+private:
+	const ccreport def = { 0x20, 0x20, 0x10, 0x10, 0, 0, 0x01, 0x00 };
+	ccreport report = def;
+	void updateReport() {
+		report.sx = raw[0];
+		report.sy = raw[1];
+		report.cx = raw[0] >> 3 | raw[1] >> 5 | raw[2] >> 7;
+		report.cy = raw[2];
+
+		report.lt = raw[2] >> 2 | raw[3] >> 5;
+		report.rt = raw[3];
+		
+		report.buttons[0] = raw[4];
+		report.buttons[1] = raw[5];
 	}
 };

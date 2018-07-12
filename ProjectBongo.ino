@@ -35,7 +35,7 @@
 #define buffSize 200
 
 //GCController controller(12);
-WiiAttachment attachment;
+ClassicController cc;
 /*
 inline GCReport bongoTest(GCReport r);
 inline GCReport bongofy(GCReport r);
@@ -87,12 +87,12 @@ void setup()
 	lightShield = shieldOn = wasPressed = inv = cr = cl = cd = cu = nn = false;
 	xLast = yLast = 0;
 
-	attachment.init();
+	cc.init();
 }
 
 void loop()
 {
-	attachment.poll();
+	cc.poll();
 	//digitalWriteFast(13, HIGH);
 }
 /*

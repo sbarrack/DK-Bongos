@@ -1,3 +1,9 @@
+const status defaultgcstatus = { GCC, 3 };
+const gcorigin defaultgcorigin = { 0, 0x80, ANALOG_MID, ANALOG_MID, ANALOG_MID, ANALOG_MID, TRIGGER_LOW, TRIGGER_LOW, 0, 0 };
+const gcreport defaultgcreport = { 0, 0x80, ANALOG_MID, ANALOG_MID, ANALOG_MID, ANALOG_MID, TRIGGER_LOW, TRIGGER_LOW };
+const n64report defaultn64report = { 0, 0, ANALOG_MID, ANALOG_MID };
+
+
 /*poll in terms of each port register and recommend to put all 1wire
 controllers on a single port, C is good*/
 class GCController : protected gcdata {
