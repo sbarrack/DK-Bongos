@@ -52,9 +52,10 @@
 //useful macros
 #define delayMicros(us) delayMicroseconds(us)
 #define SOFT_RESET() (*(volatile uint32_t*)0xE000ED0C) = 0x05FA0004
-//copied from avr_emulation.h
+//TODO: try using GPIO_DDR instead
+//sort of copied from avr_emulation.h
 #define GPIO_BITBAND_ADDR(reg, bit) \
-	(((uint32_t)&(reg) - 0x40000000) * 32 + (bit) * 4 + 0x42000000)
+	(((uint32_t)&(reg) - 0x40000000) << 5 + (bit) << 2 + 0x42000000) + 0xA0
 
 //analog values
 #define ANALOG_ERROR	0x00	//The controller disconnects if any analog sensor fails.
@@ -366,31 +367,426 @@ struct ccreport{
 class Controller {
 public:
 	status state;
-	Controller() : pin(12) {}
-	Controller(const int pin) : pin(pin) {}
+	Controller() {
+		modeReg = GPIO_BITBAND_ADDR(CORE_PIN12_PORTREG, CORE_PIN12_BIT);
+		outSetReg = &CORE_PIN12_PORTSET;
+		inReg = &CORE_PIN12_PINREG;
+		bitmask = CORE_PIN12_BITMASK;
+	}
+	Controller(const int pin) {
+		switch (pin) {
+		case 0:
+			modeReg = GPIO_BITBAND_ADDR(CORE_PIN0_PORTREG, CORE_PIN0_BIT);
+			outSetReg = &CORE_PIN0_PORTSET;
+			inReg = &CORE_PIN0_PINREG;
+			bitmask = CORE_PIN0_BITMASK;
+			break;
+		case 1:
+			modeReg = GPIO_BITBAND_ADDR(CORE_PIN1_PORTREG, CORE_PIN1_BIT);
+			outSetReg = &CORE_PIN1_PORTSET;
+			inReg = &CORE_PIN1_PINREG;
+			bitmask = CORE_PIN1_BITMASK;
+			break;
+		case 2:
+			modeReg = GPIO_BITBAND_ADDR(CORE_PIN2_PORTREG, CORE_PIN2_BIT);
+			outSetReg = &CORE_PIN2_PORTSET;
+			inReg = &CORE_PIN2_PINREG;
+			bitmask = CORE_PIN2_BITMASK;
+			break;
+		case 3:
+			modeReg = GPIO_BITBAND_ADDR(CORE_PIN3_PORTREG, CORE_PIN3_BIT);
+			outSetReg = &CORE_PIN3_PORTSET;
+			inReg = &CORE_PIN3_PINREG;
+			bitmask = CORE_PIN3_BITMASK;
+			break;
+		case 4:
+			modeReg = GPIO_BITBAND_ADDR(CORE_PIN4_PORTREG, CORE_PIN4_BIT);
+			outSetReg = &CORE_PIN4_PORTSET;
+			inReg = &CORE_PIN4_PINREG;
+			bitmask = CORE_PIN4_BITMASK;
+			break;
+		case 5:
+			modeReg = GPIO_BITBAND_ADDR(CORE_PIN5_PORTREG, CORE_PIN5_BIT);
+			outSetReg = &CORE_PIN5_PORTSET;
+			inReg = &CORE_PIN5_PINREG;
+			bitmask = CORE_PIN5_BITMASK;
+			break;
+		case 6:
+			modeReg = GPIO_BITBAND_ADDR(CORE_PIN6_PORTREG, CORE_PIN6_BIT);
+			outSetReg = &CORE_PIN6_PORTSET;
+			inReg = &CORE_PIN6_PINREG;
+			bitmask = CORE_PIN6_BITMASK;
+			break;
+		case 7:
+			modeReg = GPIO_BITBAND_ADDR(CORE_PIN7_PORTREG, CORE_PIN7_BIT);
+			outSetReg = &CORE_PIN7_PORTSET;
+			inReg = &CORE_PIN7_PINREG;
+			bitmask = CORE_PIN7_BITMASK;
+			break;
+		case 8:
+			modeReg = GPIO_BITBAND_ADDR(CORE_PIN8_PORTREG, CORE_PIN8_BIT);
+			outSetReg = &CORE_PIN8_PORTSET;
+			inReg = &CORE_PIN8_PINREG;
+			bitmask = CORE_PIN8_BITMASK;
+			break;
+		case 9:
+			modeReg = GPIO_BITBAND_ADDR(CORE_PIN9_PORTREG, CORE_PIN9_BIT);
+			outSetReg = &CORE_PIN9_PORTSET;
+			inReg = &CORE_PIN9_PINREG;
+			bitmask = CORE_PIN9_BITMASK;
+			break;
+		case 10:
+			modeReg = GPIO_BITBAND_ADDR(CORE_PIN10_PORTREG, CORE_PIN10_BIT);
+			outSetReg = &CORE_PIN10_PORTSET;
+			inReg = &CORE_PIN10_PINREG;
+			bitmask = CORE_PIN10_BITMASK;
+			break;
+		case 11:
+			modeReg = GPIO_BITBAND_ADDR(CORE_PIN11_PORTREG, CORE_PIN11_BIT);
+			outSetReg = &CORE_PIN11_PORTSET;
+			inReg = &CORE_PIN11_PINREG;
+			bitmask = CORE_PIN11_BITMASK;
+			break;
+		case 12:
+			modeReg = GPIO_BITBAND_ADDR(CORE_PIN12_PORTREG, CORE_PIN12_BIT);
+			outSetReg = &CORE_PIN12_PORTSET;
+			inReg = &CORE_PIN12_PINREG;
+			bitmask = CORE_PIN12_BITMASK;
+			break;
+		case 13:
+			modeReg = GPIO_BITBAND_ADDR(CORE_PIN13_PORTREG, CORE_PIN13_BIT);
+			outSetReg = &CORE_PIN13_PORTSET;
+			inReg = &CORE_PIN13_PINREG;
+			bitmask = CORE_PIN13_BITMASK;
+			break;
+		case 14:
+			modeReg = GPIO_BITBAND_ADDR(CORE_PIN14_PORTREG, CORE_PIN14_BIT);
+			outSetReg = &CORE_PIN14_PORTSET;
+			inReg = &CORE_PIN14_PINREG;
+			bitmask = CORE_PIN14_BITMASK;
+			break;
+		case 15:
+			modeReg = GPIO_BITBAND_ADDR(CORE_PIN15_PORTREG, CORE_PIN15_BIT);
+			outSetReg = &CORE_PIN15_PORTSET;
+			inReg = &CORE_PIN15_PINREG;
+			bitmask = CORE_PIN15_BITMASK;
+			break;
+		case 16:
+			modeReg = GPIO_BITBAND_ADDR(CORE_PIN16_PORTREG, CORE_PIN16_BIT);
+			outSetReg = &CORE_PIN16_PORTSET;
+			inReg = &CORE_PIN16_PINREG;
+			bitmask = CORE_PIN16_BITMASK;
+			break;
+		case 17:
+			modeReg = GPIO_BITBAND_ADDR(CORE_PIN17_PORTREG, CORE_PIN17_BIT);
+			outSetReg = &CORE_PIN17_PORTSET;
+			inReg = &CORE_PIN17_PINREG;
+			bitmask = CORE_PIN17_BITMASK;
+			break;
+		case 18:
+			modeReg = GPIO_BITBAND_ADDR(CORE_PIN18_PORTREG, CORE_PIN18_BIT);
+			outSetReg = &CORE_PIN18_PORTSET;
+			inReg = &CORE_PIN18_PINREG;
+			bitmask = CORE_PIN18_BITMASK;
+			break;
+		case 19:
+			modeReg = GPIO_BITBAND_ADDR(CORE_PIN19_PORTREG, CORE_PIN19_BIT);
+			outSetReg = &CORE_PIN19_PORTSET;
+			inReg = &CORE_PIN19_PINREG;
+			bitmask = CORE_PIN19_BITMASK;
+			break;
+		case 20:
+			modeReg = GPIO_BITBAND_ADDR(CORE_PIN20_PORTREG, CORE_PIN20_BIT);
+			outSetReg = &CORE_PIN20_PORTSET;
+			inReg = &CORE_PIN20_PINREG;
+			bitmask = CORE_PIN20_BITMASK;
+			break;
+		case 21:
+			modeReg = GPIO_BITBAND_ADDR(CORE_PIN21_PORTREG, CORE_PIN21_BIT);
+			outSetReg = &CORE_PIN21_PORTSET;
+			inReg = &CORE_PIN21_PINREG;
+			bitmask = CORE_PIN21_BITMASK;
+			break;
+		case 22:
+			modeReg = GPIO_BITBAND_ADDR(CORE_PIN22_PORTREG, CORE_PIN22_BIT);
+			outSetReg = &CORE_PIN22_PORTSET;
+			inReg = &CORE_PIN22_PINREG;
+			bitmask = CORE_PIN22_BITMASK;
+			break;
+		case 23:
+			modeReg = GPIO_BITBAND_ADDR(CORE_PIN23_PORTREG, CORE_PIN23_BIT);
+			outSetReg = &CORE_PIN23_PORTSET;
+			inReg = &CORE_PIN23_PINREG;
+			bitmask = CORE_PIN23_BITMASK;
+			break;
+		case 24:
+			modeReg = GPIO_BITBAND_ADDR(CORE_PIN24_PORTREG, CORE_PIN24_BIT);
+			outSetReg = &CORE_PIN24_PORTSET;
+			inReg = &CORE_PIN24_PINREG;
+			bitmask = CORE_PIN24_BITMASK;
+			break;
+		case 25:
+			modeReg = GPIO_BITBAND_ADDR(CORE_PIN25_PORTREG, CORE_PIN25_BIT);
+			outSetReg = &CORE_PIN25_PORTSET;
+			inReg = &CORE_PIN25_PINREG;
+			bitmask = CORE_PIN25_BITMASK;
+			break;
+		case 26:
+			modeReg = GPIO_BITBAND_ADDR(CORE_PIN26_PORTREG, CORE_PIN26_BIT);
+			outSetReg = &CORE_PIN26_PORTSET;
+			inReg = &CORE_PIN26_PINREG;
+			bitmask = CORE_PIN26_BITMASK;
+			break;
+		case 27:
+			modeReg = GPIO_BITBAND_ADDR(CORE_PIN27_PORTREG, CORE_PIN27_BIT);
+			outSetReg = &CORE_PIN27_PORTSET;
+			inReg = &CORE_PIN27_PINREG;
+			bitmask = CORE_PIN27_BITMASK;
+			break;
+		case 28:
+			modeReg = GPIO_BITBAND_ADDR(CORE_PIN28_PORTREG, CORE_PIN28_BIT);
+			outSetReg = &CORE_PIN28_PORTSET;
+			inReg = &CORE_PIN28_PINREG;
+			bitmask = CORE_PIN28_BITMASK;
+			break;
+		case 29:
+			modeReg = GPIO_BITBAND_ADDR(CORE_PIN29_PORTREG, CORE_PIN29_BIT);
+			outSetReg = &CORE_PIN29_PORTSET;
+			inReg = &CORE_PIN29_PINREG;
+			bitmask = CORE_PIN29_BITMASK;
+			break;
+		case 30:
+			modeReg = GPIO_BITBAND_ADDR(CORE_PIN30_PORTREG, CORE_PIN30_BIT);
+			outSetReg = &CORE_PIN30_PORTSET;
+			inReg = &CORE_PIN30_PINREG;
+			bitmask = CORE_PIN30_BITMASK;
+			break;
+		case 31:
+			modeReg = GPIO_BITBAND_ADDR(CORE_PIN31_PORTREG, CORE_PIN31_BIT);
+			outSetReg = &CORE_PIN31_PORTSET;
+			inReg = &CORE_PIN31_PINREG;
+			bitmask = CORE_PIN31_BITMASK;
+			break;
+		case 32:
+			modeReg = GPIO_BITBAND_ADDR(CORE_PIN32_PORTREG, CORE_PIN32_BIT);
+			outSetReg = &CORE_PIN32_PORTSET;
+			inReg = &CORE_PIN32_PINREG;
+			bitmask = CORE_PIN32_BITMASK;
+			break;
+		case 33:
+			modeReg = GPIO_BITBAND_ADDR(CORE_PIN33_PORTREG, CORE_PIN33_BIT);
+			outSetReg = &CORE_PIN33_PORTSET;
+			inReg = &CORE_PIN33_PINREG;
+			bitmask = CORE_PIN33_BITMASK;
+			break;
+		case 34:
+			modeReg = GPIO_BITBAND_ADDR(CORE_PIN34_PORTREG, CORE_PIN34_BIT);
+			outSetReg = &CORE_PIN34_PORTSET;
+			inReg = &CORE_PIN34_PINREG;
+			bitmask = CORE_PIN34_BITMASK;
+			break;
+		case 35:
+			modeReg = GPIO_BITBAND_ADDR(CORE_PIN35_PORTREG, CORE_PIN35_BIT);
+			outSetReg = &CORE_PIN35_PORTSET;
+			inReg = &CORE_PIN35_PINREG;
+			bitmask = CORE_PIN35_BITMASK;
+			break;
+		case 36:
+			modeReg = GPIO_BITBAND_ADDR(CORE_PIN36_PORTREG, CORE_PIN36_BIT);
+			outSetReg = &CORE_PIN36_PORTSET;
+			inReg = &CORE_PIN36_PINREG;
+			bitmask = CORE_PIN36_BITMASK;
+			break;
+		case 37:
+			modeReg = GPIO_BITBAND_ADDR(CORE_PIN37_PORTREG, CORE_PIN37_BIT);
+			outSetReg = &CORE_PIN37_PORTSET;
+			inReg = &CORE_PIN37_PINREG;
+			bitmask = CORE_PIN37_BITMASK;
+			break;
+		case 38:
+			modeReg = GPIO_BITBAND_ADDR(CORE_PIN38_PORTREG, CORE_PIN38_BIT);
+			outSetReg = &CORE_PIN38_PORTSET;
+			inReg = &CORE_PIN38_PINREG;
+			bitmask = CORE_PIN38_BITMASK;
+			break;
+		case 39:
+			modeReg = GPIO_BITBAND_ADDR(CORE_PIN39_PORTREG, CORE_PIN39_BIT);
+			outSetReg = &CORE_PIN39_PORTSET;
+			inReg = &CORE_PIN39_PINREG;
+			bitmask = CORE_PIN39_BITMASK;
+			break;
+		case 40:
+			modeReg = GPIO_BITBAND_ADDR(CORE_PIN40_PORTREG, CORE_PIN40_BIT);
+			outSetReg = &CORE_PIN40_PORTSET;
+			inReg = &CORE_PIN40_PINREG;
+			bitmask = CORE_PIN40_BITMASK;
+			break;
+		case 41:
+			modeReg = GPIO_BITBAND_ADDR(CORE_PIN41_PORTREG, CORE_PIN41_BIT);
+			outSetReg = &CORE_PIN41_PORTSET;
+			inReg = &CORE_PIN41_PINREG;
+			bitmask = CORE_PIN41_BITMASK;
+			break;
+		case 42:
+			modeReg = GPIO_BITBAND_ADDR(CORE_PIN42_PORTREG, CORE_PIN42_BIT);
+			outSetReg = &CORE_PIN42_PORTSET;
+			inReg = &CORE_PIN42_PINREG;
+			bitmask = CORE_PIN42_BITMASK;
+			break;
+		case 43:
+			modeReg = GPIO_BITBAND_ADDR(CORE_PIN43_PORTREG, CORE_PIN43_BIT);
+			outSetReg = &CORE_PIN43_PORTSET;
+			inReg = &CORE_PIN43_PINREG;
+			bitmask = CORE_PIN43_BITMASK;
+			break;
+		case 44:
+			modeReg = GPIO_BITBAND_ADDR(CORE_PIN44_PORTREG, CORE_PIN44_BIT);
+			outSetReg = &CORE_PIN44_PORTSET;
+			inReg = &CORE_PIN44_PINREG;
+			bitmask = CORE_PIN44_BITMASK;
+			break;
+		case 45:
+			modeReg = GPIO_BITBAND_ADDR(CORE_PIN45_PORTREG, CORE_PIN45_BIT);
+			outSetReg = &CORE_PIN45_PORTSET;
+			inReg = &CORE_PIN45_PINREG;
+			bitmask = CORE_PIN45_BITMASK;
+			break;
+		case 46:
+			modeReg = GPIO_BITBAND_ADDR(CORE_PIN46_PORTREG, CORE_PIN46_BIT);
+			outSetReg = &CORE_PIN46_PORTSET;
+			inReg = &CORE_PIN46_PINREG;
+			bitmask = CORE_PIN46_BITMASK;
+			break;
+		case 47:
+			modeReg = GPIO_BITBAND_ADDR(CORE_PIN47_PORTREG, CORE_PIN47_BIT);
+			outSetReg = &CORE_PIN47_PORTSET;
+			inReg = &CORE_PIN47_PINREG;
+			bitmask = CORE_PIN47_BITMASK;
+			break;
+		case 48:
+			modeReg = GPIO_BITBAND_ADDR(CORE_PIN48_PORTREG, CORE_PIN48_BIT);
+			outSetReg = &CORE_PIN48_PORTSET;
+			inReg = &CORE_PIN48_PINREG;
+			bitmask = CORE_PIN48_BITMASK;
+			break;
+		case 49:
+			modeReg = GPIO_BITBAND_ADDR(CORE_PIN49_PORTREG, CORE_PIN49_BIT);
+			outSetReg = &CORE_PIN49_PORTSET;
+			inReg = &CORE_PIN49_PINREG;
+			bitmask = CORE_PIN49_BITMASK;
+			break;
+		case 50:
+			modeReg = GPIO_BITBAND_ADDR(CORE_PIN50_PORTREG, CORE_PIN50_BIT);
+			outSetReg = &CORE_PIN50_PORTSET;
+			inReg = &CORE_PIN50_PINREG;
+			bitmask = CORE_PIN50_BITMASK;
+			break;
+		case 51:
+			modeReg = GPIO_BITBAND_ADDR(CORE_PIN51_PORTREG, CORE_PIN51_BIT);
+			outSetReg = &CORE_PIN51_PORTSET;
+			inReg = &CORE_PIN51_PINREG;
+			bitmask = CORE_PIN51_BITMASK;
+			break;
+		case 52:
+			modeReg = GPIO_BITBAND_ADDR(CORE_PIN52_PORTREG, CORE_PIN52_BIT);
+			outSetReg = &CORE_PIN52_PORTSET;
+			inReg = &CORE_PIN52_PINREG;
+			bitmask = CORE_PIN52_BITMASK;
+			break;
+		case 53:
+			modeReg = GPIO_BITBAND_ADDR(CORE_PIN53_PORTREG, CORE_PIN53_BIT);
+			outSetReg = &CORE_PIN53_PORTSET;
+			inReg = &CORE_PIN53_PINREG;
+			bitmask = CORE_PIN53_BITMASK;
+			break;
+		case 54:
+			modeReg = GPIO_BITBAND_ADDR(CORE_PIN54_PORTREG, CORE_PIN54_BIT);
+			outSetReg = &CORE_PIN54_PORTSET;
+			inReg = &CORE_PIN54_PINREG;
+			bitmask = CORE_PIN54_BITMASK;
+			break;
+		case 55:
+			modeReg = GPIO_BITBAND_ADDR(CORE_PIN55_PORTREG, CORE_PIN55_BIT);
+			outSetReg = &CORE_PIN55_PORTSET;
+			inReg = &CORE_PIN55_PINREG;
+			bitmask = CORE_PIN55_BITMASK;
+			break;
+		case 56:
+			modeReg = GPIO_BITBAND_ADDR(CORE_PIN56_PORTREG, CORE_PIN56_BIT);
+			outSetReg = &CORE_PIN56_PORTSET;
+			inReg = &CORE_PIN56_PINREG;
+			bitmask = CORE_PIN56_BITMASK;
+			break;
+		case 57:
+			modeReg = GPIO_BITBAND_ADDR(CORE_PIN57_PORTREG, CORE_PIN57_BIT);
+			outSetReg = &CORE_PIN57_PORTSET;
+			inReg = &CORE_PIN57_PINREG;
+			bitmask = CORE_PIN57_BITMASK;
+			break;
+		case 58:
+			modeReg = GPIO_BITBAND_ADDR(CORE_PIN58_PORTREG, CORE_PIN58_BIT);
+			outSetReg = &CORE_PIN58_PORTSET;
+			inReg = &CORE_PIN58_PINREG;
+			bitmask = CORE_PIN58_BITMASK;
+			break;
+		case 59:
+			modeReg = GPIO_BITBAND_ADDR(CORE_PIN59_PORTREG, CORE_PIN59_BIT);
+			outSetReg = &CORE_PIN59_PORTSET;
+			inReg = &CORE_PIN59_PINREG;
+			bitmask = CORE_PIN59_BITMASK;
+			break;
+		case 60:
+			modeReg = GPIO_BITBAND_ADDR(CORE_PIN60_PORTREG, CORE_PIN60_BIT);
+			outSetReg = &CORE_PIN60_PORTSET;
+			inReg = &CORE_PIN60_PINREG;
+			bitmask = CORE_PIN60_BITMASK;
+			break;
+		case 61:
+			modeReg = GPIO_BITBAND_ADDR(CORE_PIN61_PORTREG, CORE_PIN61_BIT);
+			outSetReg = &CORE_PIN61_PORTSET;
+			inReg = &CORE_PIN61_PINREG;
+			bitmask = CORE_PIN61_BITMASK;
+			break;
+		case 62:
+			modeReg = GPIO_BITBAND_ADDR(CORE_PIN62_PORTREG, CORE_PIN62_BIT);
+			outSetReg = &CORE_PIN62_PORTSET;
+			inReg = &CORE_PIN62_PINREG;
+			bitmask = CORE_PIN62_BITMASK;
+			break;
+		case 63:
+			modeReg = GPIO_BITBAND_ADDR(CORE_PIN63_PORTREG, CORE_PIN63_BIT);
+			outSetReg = &CORE_PIN63_PORTSET;
+			inReg = &CORE_PIN63_PINREG;
+			bitmask = CORE_PIN63_BITMASK;
+		}
+	}
 	void init() {
 		uint8_t command[] = { 0 };
-		transceive(command);
+		transceive(command, 3, state.raw);
 	}
 protected:
-	const int pin;
-	uint32_t buffer[80];
+	uint32_t modeReg, bitmask;
+	volatile uint32_t *outSetReg, *inReg, *buffer;
 	//TODO: make it wait based on F_CPU
 	//NOTE: everything on this arm core is 32-bit, do everything in words
-	inline void transceive(uint8_t *command) {
-
+	inline void transceive(uint8_t *command, int len, uint8_t *data) {
 		uint8_t oldSREG = SREG;
 		cli();
 		__asm__ volatile(
 			""
-			:
-			:
-			:
+			: 
+			: "r" (modeReg), "r" (bitmask), "r" (outSetReg), "r" (inReg), 
+				"r" (buffer), "r" (command), "r" (len)
+			: 
 			);
 		SREG = oldSREG;
-
+		int k = 0;
+		for (int i = 0; i < len; i++) {
+			for (int j = 7; j > -1; j++) {
+				data[i] |= (buffer[k++] && bitmask) << j;
+			}
+		}
 	}
-
 };
 
 class N64Controller : public Controller {
@@ -400,7 +796,7 @@ public:
 	N64Controller(const int pin) : Controller(pin) {}
 	void poll() {
 		uint8_t command[] = { 1 };
-		transceive(command);
+		transceive(command, 4, report.raw);
 	}
 protected:
 
@@ -414,15 +810,15 @@ public:
 	GCController(const int pin) : Controller(pin) {}
 	void center() {
 		uint8_t command[] = { 0x41 };
-		transceive(command);
+		transceive(command, 10, origin.raw);
 	}
 	void poll() {
 		uint8_t command[] = { 0x43 };
-		transceive(command);
+		transceive(command, 8, report.raw);
 	}
 	void scan() {
 		uint8_t command[] = { 0x54 };
-		transceive(command);
+		transceive(command, 8, report.raw);
 	}
 protected:
 
@@ -433,17 +829,17 @@ class WiiAttachment {
 public:
 	uint8_t raw[6];
 	uint8_t id[6];
-	WiiAttachment() : wire(Wire), pins(I2C_PINS_16_17) {}
-	WiiAttachment(i2c_t3 wire, i2c_pins pins) : 
-		wire(wire), pins(pins) {}
+	//TODO: wire constructor or variable or what?
+	WiiAttachment() : pins(I2C_PINS_16_17) {}
+	WiiAttachment(i2c_pins pins) : pins(pins) {}
 	void identify() {
-		wire.beginTransmission(CON);
-		wire.write(0xFA);
-		wire.write(0);
-		while (wire.endTransmission());
+		Wire.beginTransmission(CON);
+		Wire.write(0xFA);
+		Wire.write(0);
+		while (Wire.endTransmission());
 		delayMicros(36);
-		wire.requestFrom(CON, 6);
-		wire.readBytes(id, 6);
+		Wire.requestFrom(CON, 6);
+		Wire.readBytes(id, 6);
 		checkReset();
 	}
 	void poll() {
@@ -476,7 +872,6 @@ public:
 		poll();
 	}
 protected:
-	i2c_t3 wire;
 	i2c_pins pins;
 	void updateReport() {}
 	void checkReset() {
@@ -493,7 +888,7 @@ class Nunchuck : public WiiAttachment {
 public:
 	ncreport report;
 	Nunchuck() : WiiAttachment() {}
-	Nunchuck(i2c_t3 wire, i2c_pins pins) : WiiAttachment(wire, pins) {}
+	Nunchuck(i2c_pins pins) : WiiAttachment(pins) {}
 protected:
 	void updateReport() {
 		report.sx = raw[0];
@@ -512,8 +907,7 @@ class ClassicController : public WiiAttachment {
 public:
 	ccreport report;
 	ClassicController() : WiiAttachment() {}
-	ClassicController(i2c_t3 wire, i2c_pins pins) : 
-		WiiAttachment(wire, pins) {}
+	ClassicController(i2c_pins pins) : WiiAttachment(pins) {}
 protected:
 	void updateReport() {
 		report.sx = raw[0];
