@@ -23,28 +23,34 @@
 	use of Teensy's features. Originally, my understanding of the N64/GCN
 	controller protocol was that it was something proprietary, however,
 	it is simply a faster version of the 1-wire Interface from MSB to LSB
-	[1,2]. Additionally, Wii Remote	attachment controllers use the 2-wire 
-	Interface (TWI/I2C) which is supported by Teensy [3]. Timing for ARM 
-	instructions can be found in the ARM Information Center [4] while usage 
-	can be found in the reference manual section A7.7 [5]. Also, while the 
-	No-Operation Instruction (NOP) consumes time on AVR, the ARM pipeline 
-	treats them as padding only [6] so I adjusted accordingly to get exact 
-	timing. For more information on the full details of the N64/GCN
-	protocol see Squid64's Google site [7]; it lists all the commands and
-	devices used.
+	[1,2]. My implementation of this uses bit-banging to handle the data
+	[3]. Additionally, Wii Remote attachment controllers use the 2-wire 
+	Interface (TWI/I2C) which is supported by Teensy [4]. Thirdly, the 
+	GB/GBC/GBA link cable uses SPI with both handhelds as the master/slave 
+	with a 3-wire connection [5]. Timing for ARM instructions can be found 
+	in the ARM Information Center [6] while usage can be found in the 
+	reference manual section A7.7 [7]. Also, while the No-Operation 
+	Instruction (NOP) consumes time on AVR, the ARM pipeline treats them as 
+	padding only [8] so I adjusted accordingly to get exact timing. For more 
+	information on the full details of the N64/GCN protocol see Squid64's 
+	site [9]; it lists all the commands and devices used.
 
 	[1] http://www.int03.co.uk/crema/hardware/gamecube/gc-control.html
 	[2] https://en.wikipedia.org/wiki/1-wire
-	[3] http://wiibrew.org/wiki/Wiimote
-	[4] http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.ddi0439b/CHDDIGAC.html
-	[5] https://www.pjrc.com/teensy/beta/DDI0403D_arm_architecture_v7m_reference_manual.pdf
-	[6] http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.dui0553a/CHDJJGFB.html
-	[7] https://sites.google.com/site/consoleprotocols/home/techinfo/nintendo-joy-bus-documentation?authuser=0
+	[3] https://en.wikipedia.org/wiki/Bit_banging
+	[4] http://wiibrew.org/wiki/Wiimote
+	[5] https://en.wikipedia.org/wiki/Serial_Peripheral_Interface
+	[6] http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.ddi0439b/CHDDIGAC.html
+	[7] https://www.pjrc.com/teensy/beta/DDI0403D_arm_architecture_v7m_reference_manual.pdf
+	[8] http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.dui0553a/CHDJJGFB.html
+	[9] https://sites.google.com/site/consoleprotocols/home/techinfo/nintendo-joy-bus-documentation?authuser=0
 
 	Controllers: GC GCController, DK Bongos, GC Keyboard (not tested),
 	Nunchuck, Classic Controller, N64 Controller, GBA (not tested)
 	Arduinos: Teensy 3.5 120MHz
 	*/
+
+//TODO: Write my own darned documentation on all this garbage so that it's all in one place!
 
 #pragma once
 #include <i2c_t3.h>
@@ -240,23 +246,23 @@ union gcreport {
 	uint32_t raw32[2];
 
 	struct {
-		uint8_t errorStatus : 1;
-		uint8_t errorLatch : 1;
-		uint8_t getOrigin : 1;	//x+y+start
-		uint8_t start : 1;
-		uint8_t y : 1;	//tl
-		uint8_t x : 1;	//tr
-		uint8_t b : 1;	//bl
 		uint8_t a : 1;	//br
+		uint8_t b : 1;	//bl
+		uint8_t x : 1;	//tr
+		uint8_t y : 1;	//tl
+		uint8_t start : 1;
+		uint8_t getOrigin : 1;	//x+y+start
+		uint8_t errorLatch : 1;
+		uint8_t errorStatus : 1;
 
-		uint8_t useOrigin : 1;
-		uint8_t l : 1;
-		uint8_t r : 1;
-		uint8_t z : 1;
-		uint8_t du : 1;
-		uint8_t dd : 1;
-		uint8_t dr : 1;
 		uint8_t dl : 1;
+		uint8_t dr : 1;
+		uint8_t dd : 1;
+		uint8_t du : 1;
+		uint8_t z : 1;
+		uint8_t r : 1;
+		uint8_t l : 1;
+		uint8_t useOrigin : 1;
 
 		uint8_t sx;
 		uint8_t sy;
@@ -767,17 +773,36 @@ public:
 protected:
 	uint32_t modeReg, bitmask;
 	volatile uint32_t *outSetReg, *inReg, *buffer;
+	//TODO: screw this and try digitalRead/WriteFast w/GPIO again but asm timing? OR TRY USING TWI WITHOUT CONNECTING TO CLOCK @ 1MHz!!!
 	//TODO: make it wait based on F_CPU
 	//NOTE: everything on this arm core is 32-bit, do everything in words
 	inline void transceive(uint8_t *command, int len, uint8_t *data) {
 		uint8_t oldSREG = SREG;
 		cli();
 		__asm__ volatile(
-			""
+
+			"ldr r1, =0\n"
+			"str r1, [%0]\n"	//output mode
+			"ldr r1, =1\n"
+			"str r1, [%0]\n"	//input mode (use mov for these vs ldr+str?)
+
+			"str %2, [%3, 4]\n"	//line low
+			"str %2, [%3, 0]\n"	//line high
+
+			"ldr r0, =38\n"	//wait 1us@120MHz(120 cycles)
+			"0:\n"
+			"subs r0, #1\n"
+			"bne 0b\n"
+
+			//buffer[i++] = inReg;	//receive bit
+			"ldr r1, [%3]\n"	//line read
+			"str r1, [%4]\n"	//line store (use mov instead of ldr+str?)
+			"add %4, %4, #4\n"	//next word in buffer
+
 			: 
 			: "r" (modeReg), "r" (bitmask), "r" (outSetReg), "r" (inReg), 
 				"r" (buffer), "r" (command), "r" (len)
-			: 
+			: "r0", "r1"
 			);
 		SREG = oldSREG;
 		int k = 0;
@@ -824,54 +849,55 @@ protected:
 
 };
 
-//TODO: check timings for different frequencies
+//TODO: check timings for different F_CPU
 class WiiAttachment {
 public:
 	uint8_t raw[6];
 	uint8_t id[6];
-	//TODO: wire constructor or variable or what?
-	WiiAttachment() : pins(I2C_PINS_16_17) {}
-	WiiAttachment(i2c_pins pins) : pins(pins) {}
+	//TODO: please let this work next time I run the code
+	WiiAttachment() : wire(i2c_t3(0)), pins(I2C_PINS_16_17) {}
+	WiiAttachment(int bus, i2c_pins pins) : wire(i2c_t3(bus)), pins(pins) {}
 	void identify() {
-		Wire.beginTransmission(CON);
-		Wire.write(0xFA);
-		Wire.write(0);
-		while (Wire.endTransmission());
+		wire.beginTransmission(CON);
+		wire.write(0xFA);
+		wire.write(0);
+		while (wire.endTransmission());
 		delayMicros(36);
-		Wire.requestFrom(CON, 6);
-		Wire.readBytes(id, 6);
+		wire.requestFrom(CON, 6);
+		wire.readBytes(id, 6);
 		checkReset();
 	}
 	void poll() {
 		int i = 0;
-		Wire.beginTransmission(CON);
-		Wire.write(0);
-		while (Wire.endTransmission()) { Serial.print(i++); };
+		wire.beginTransmission(CON);
+		wire.write(0);
+		while (wire.endTransmission()) { Serial.print(i++); };
 		delayMicros(157);
-		Wire.requestFrom(CON, 6);
-		Wire.readBytes(raw, 6);
+		wire.requestFrom(CON, 6);
+		wire.readBytes(raw, 6);
 		updateReport();
 		checkReset();
 	}
 	//starts attachment unencrypted
 	void init() {
-		Wire.begin(I2C_MASTER, 0, pins, I2C_PULLUP_EXT, 400000);
-		Wire.beginTransmission(CON);
-		Wire.write(0xF0);
-		Wire.write(0x55);
-		if (Wire.endTransmission()) {
+		wire.begin(I2C_MASTER, 0, pins, I2C_PULLUP_EXT, 400000);
+		wire.beginTransmission(CON);
+		wire.write(0xF0);
+		wire.write(0x55);
+		if (wire.endTransmission()) {
 			//SOFT_RESET();
 			init();
 			return;
 		}
-		Wire.beginTransmission(CON);
-		Wire.write(0xFB);
-		Wire.write(0);
-		while (Wire.endTransmission());
+		wire.beginTransmission(CON);
+		wire.write(0xFB);
+		wire.write(0);
+		while (wire.endTransmission());
 		//identify();
 		poll();
 	}
 protected:
+	i2c_t3 wire;
 	i2c_pins pins;
 	void updateReport() {}
 	void checkReset() {
@@ -888,7 +914,7 @@ class Nunchuck : public WiiAttachment {
 public:
 	ncreport report;
 	Nunchuck() : WiiAttachment() {}
-	Nunchuck(i2c_pins pins) : WiiAttachment(pins) {}
+	Nunchuck(int bus, i2c_pins pins) : WiiAttachment(bus, pins) {}
 protected:
 	void updateReport() {
 		report.sx = raw[0];
@@ -907,7 +933,7 @@ class ClassicController : public WiiAttachment {
 public:
 	ccreport report;
 	ClassicController() : WiiAttachment() {}
-	ClassicController(i2c_pins pins) : WiiAttachment(pins) {}
+	ClassicController(int bus, i2c_pins pins) : WiiAttachment(bus, pins) {}
 protected:
 	void updateReport() {
 		report.sx = raw[0];

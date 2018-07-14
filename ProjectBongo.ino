@@ -29,13 +29,13 @@
 	Dreamcast Maracas work.
 	*/
 
-#include "UltraWire.h"
+#include "lib.h"
 
 #define buffr 6
 #define buffSize 200
 
-//GCController controller(12);
-ClassicController cc;
+//N64Controller n64c(12);
+//Nunchuck nc;
 /*
 inline GCReport bongoTest(GCReport r);
 inline GCReport bongofy(GCReport r);
@@ -67,7 +67,7 @@ double angle, ang1 = atan2(114, -127), ang2 = atan2(114, 127);
 bool lightShield, shieldOn, nothing, wasPressed, inv, cr, cl, cd, cu, nn, wasn;
 uint8_t xLast, yLast;
 
-static constexpr bongoReport bongoDefRep = { 0, TRIGGER_LOW };
+//static constexpr bongoReport bongoDefRep = { 0, TRIGGER_LOW };
 
 void setup()
 {
@@ -82,19 +82,21 @@ void setup()
 	delay(1000);
 	digitalWriteFast(13, LOW);
 	
-	bongo = bongoDefRep;
+	//bongo = bongoDefRep;
 	wasn = true;
 	lightShield = shieldOn = wasPressed = inv = cr = cl = cd = cu = nn = false;
 	xLast = yLast = 0;
 
-	cc.init();
+	//nc.init();
 }
 
 void loop()
 {
-	cc.poll();
-	digitalWriteFast(13, cc.report.a);
-	delay(2000);
+	//poll+print n64c here
+
+	//nc.poll();
+	//digitalWriteFast(13, nc.report.a);
+	//delay(2000);
 }
 /*
 inline GCReport bongoTest(GCReport r) {
