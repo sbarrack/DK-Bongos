@@ -60,8 +60,8 @@
 #define SOFT_RESET() (*(volatile uint32_t*)0xE000ED0C) = 0x05FA0004
 //TODO: try using GPIO_DDR instead
 //sort of copied from avr_emulation.h
-#define GPIO_BITBAND_ADDR(reg, bit) \
-	(((uint32_t)&(reg) - 0x40000000) << 5 + (bit) << 2 + 0x42000000) + 0xA0
+#define GPIO_BITBAND_ADDR(reg, bitt) \
+	((((uint32_t)&(reg) - 0x40000000) * 32 + (bitt) * 4 + 0x42000000) + 160)
 
 //analog values
 #define ANALOG_ERROR	0x00	//The controller disconnects if any analog sensor fails.
@@ -286,7 +286,7 @@ union gcorigin {
 
 union n64report {
 	uint8_t raw[4];
-	uint32_t raw32[1];
+	uint32_t raw32;
 
 	struct {
 		uint8_t dr : 1;
@@ -307,8 +307,8 @@ union n64report {
 		uint8_t : 1;
 		uint8_t reset : 1;	//l+r+start
 
-		uint8_t sx;
-		uint8_t sy;
+		int8_t sx;
+		int8_t sy;
 	};
 };
 

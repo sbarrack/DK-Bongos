@@ -3,8 +3,3 @@ const uint8_t defreport[4] = { 0, 0, ANALOG_MID, ANALOG_MID };
 const status defstate = { GCC, 3 };
 const gcreport defreport = { 0, 0x80, ANALOG_MID, ANALOG_MID, ANALOG_MID, ANALOG_MID, TRIGGER_LOW, TRIGGER_LOW };
 const gcorigin deforigin = { 0, 0x80, ANALOG_MID, ANALOG_MID, ANALOG_MID, ANALOG_MID, TRIGGER_LOW, TRIGGER_LOW, 0, 0 };
-
-void setup() {
-	//PORTC MUX, not sure what this does but maybe it's important
-	CORE_PIN12_CONFIG = PORT_PCR_MUX(1);
-}
