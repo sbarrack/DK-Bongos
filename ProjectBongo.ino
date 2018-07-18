@@ -35,7 +35,7 @@
 #define buffSize 200
 
 //N64Controller n64c(12);
-//Nunchuck nc;
+Nunchuck nc;
 /*
 inline GCReport bongoTest(GCReport r);
 inline GCReport bongofy(GCReport r);
@@ -43,6 +43,7 @@ inline GCReport jalhalla(GCReport r);
 inline GCReport noTapJump(GCReport r);
 inline GCReport tiltStick(GCReport r);
 */
+/*
 union bongoReport {
 	uint8_t raw[2];
 
@@ -58,7 +59,7 @@ union bongoReport {
 	};
 };
 
-//GCReport gcr;
+GCReport gcr;
 bongoReport bongo;
 bongoReport buff[buffSize];
 int cBuff[buffSize];
@@ -67,12 +68,13 @@ double angle, ang1 = atan2(114, -127), ang2 = atan2(114, 127);
 bool lightShield, shieldOn, nothing, wasPressed, inv, cr, cl, cd, cu, nn, wasn;
 uint8_t xLast, yLast;
 
-//static constexpr bongoReport bongoDefRep = { 0, TRIGGER_LOW };
-
+static constexpr bongoReport bongoDefRep = { 0, TRIGGER_LOW };
+*/
 void setup()
 {
 	Serial.begin(115200);
 	while (!Serial);
+	/*
 	pinMode(13, OUTPUT);
 	digitalWriteFast(13, HIGH);
 	Serial.println("ProjectBongo | Copyright (C) 2018 | Stephen Barrack");
@@ -81,22 +83,25 @@ void setup()
 	Serial.println("View README and LICENSE included with this project for full details.");
 	delay(1000);
 	digitalWriteFast(13, LOW);
-	
-	//bongo = bongoDefRep;
+	*/
+	/*
+	bongo = bongoDefRep;
 	wasn = true;
 	lightShield = shieldOn = wasPressed = inv = cr = cl = cd = cu = nn = false;
 	xLast = yLast = 0;
-
-	//nc.init();
+	*/
+	nc.init();
 }
 
 void loop()
 {
-	//poll+print n64c here
-
-	//nc.poll();
-	//digitalWriteFast(13, nc.report.a);
-	//delay(2000);
+	nc.poll();
+	Serial.print(nc.report.c ? "C" : "_");
+	Serial.print(nc.report.z ? "Z " : "_ ");
+	Serial.print(nc.report.sx, HEX);
+	Serial.print(",");
+	Serial.println(nc.report.sy, HEX);
+	delay(17);
 }
 /*
 inline GCReport bongoTest(GCReport r) {

@@ -57,13 +57,14 @@
 
 //useful macros
 #define delayMicros(us) delayMicroseconds(us)
+//found somewhere on the internet, resets the Teensy
 #define SOFT_RESET() (*(volatile uint32_t*)0xE000ED0C) = 0x05FA0004
-//TODO: try using GPIO_DDR instead
-//sort of copied from avr_emulation.h
+//copied from pins_teensy.c
 #define GPIO_BITBAND_ADDR(reg, bitt) \
-	((((uint32_t)&(reg) - 0x40000000) * 32 + (bitt) * 4 + 0x42000000) + 160)
+	(((uint32_t)&(reg) - 0x40000000) * 32 + (bitt) * 4 + 0x42000000)
 
 //analog values
+//NOTE: N64 sticks are signed, GC and Wii sticks are not
 #define ANALOG_ERROR	0x00	//The controller disconnects if any analog sensor fails.
 #define ANALOG_MIN		0x01
 #define ANALOG_MAX		0xFF	
@@ -91,9 +92,9 @@
 #define STICK_MIN_ADJ		-105*/
 
 //1-wire device ids
-#define GCC				0x0900
-#define BONGOS			0x0900
-#define N64C			0x0500
+#define GCC				0x0900//03
+#define BONGOS			0x0900//00?
+#define N64C			0x0500//02
 //TODO
 /*#define GC_KEYBOARD		0x0820
 #define GBA				0x0004
@@ -323,53 +324,6 @@ struct gcdata {
 	gcreport report;
 };
 
-struct ncreport{
-	uint8_t sx;
-	uint8_t sy;
-
-	uint32_t ax : 10;
-	uint32_t ay : 10;
-	uint32_t az : 10;
-
-	uint32_t c : 1;
-	uint32_t z : 1;
-};
-
-struct ccreport{
-	uint32_t sx : 6;
-	uint32_t sy : 6;
-	uint32_t cx : 5;
-	uint32_t cy : 5;
-
-	uint32_t lt : 5;
-	uint32_t rt : 5;
-
-	union {
-		uint8_t buttons[2] = { 1, 0 };
-
-		struct {
-			uint8_t : 1;
-			uint8_t r : 1;
-			uint8_t start : 1;
-			uint8_t home : 1;
-			uint8_t select : 1;
-			uint8_t l : 1;
-			uint8_t dd : 1;
-			uint8_t dr : 1;
-
-			uint8_t du : 1;
-			uint8_t dl : 1;
-			uint8_t zr : 1;
-			uint8_t x : 1;
-			uint8_t a : 1;
-			uint8_t y : 1;
-			uint8_t b : 1;
-			uint8_t zl : 1;
-		};
-	};
-};
-
-//poll in terms of each port register
 class Controller {
 public:
 	status state;
@@ -773,44 +727,9 @@ public:
 protected:
 	uint32_t modeReg, bitmask;
 	volatile uint32_t *outSetReg, *inReg, *buffer;
-	//TODO: screw this and try digitalRead/WriteFast w/GPIO again but asm timing? OR TRY USING TWI WITHOUT CONNECTING TO CLOCK @ 1MHz!!!
 	//TODO: make it wait based on F_CPU
-	//NOTE: everything on this arm core is 32-bit, do everything in words
 	inline void transceive(uint8_t *command, int len, uint8_t *data) {
-		uint8_t oldSREG = SREG;
-		cli();
-		__asm__ volatile(
-
-			"ldr r1, =0\n"
-			"str r1, [%0]\n"	//output mode
-			"ldr r1, =1\n"
-			"str r1, [%0]\n"	//input mode (use mov for these vs ldr+str?)
-
-			"str %2, [%3, 4]\n"	//line low
-			"str %2, [%3, 0]\n"	//line high
-
-			"ldr r0, =38\n"	//wait 1us@120MHz(120 cycles)
-			"0:\n"
-			"subs r0, #1\n"
-			"bne 0b\n"
-
-			//buffer[i++] = inReg;	//receive bit
-			"ldr r1, [%3]\n"	//line read
-			"str r1, [%4]\n"	//line store (use mov instead of ldr+str?)
-			"add %4, %4, #4\n"	//next word in buffer
-
-			: 
-			: "r" (modeReg), "r" (bitmask), "r" (outSetReg), "r" (inReg), 
-				"r" (buffer), "r" (command), "r" (len)
-			: "r0", "r1"
-			);
-		SREG = oldSREG;
-		int k = 0;
-		for (int i = 0; i < len; i++) {
-			for (int j = 7; j > -1; j++) {
-				data[i] |= (buffer[k++] && bitmask) << j;
-			}
-		}
+		//change to work similar to n64pad
 	}
 };
 
@@ -849,12 +768,11 @@ protected:
 
 };
 
-//TODO: check timings for different F_CPU
+//TODO: check for different min timings for F_CPU, add a re-init feature
 class WiiAttachment {
 public:
 	uint8_t raw[6];
 	uint8_t id[6];
-	//TODO: please let this work next time I run the code
 	WiiAttachment() : wire(i2c_t3(0)), pins(I2C_PINS_16_17) {}
 	WiiAttachment(int bus, i2c_pins pins) : wire(i2c_t3(bus)), pins(pins) {}
 	void identify() {
@@ -865,18 +783,15 @@ public:
 		delayMicros(36);
 		wire.requestFrom(CON, 6);
 		wire.readBytes(id, 6);
-		checkReset();
 	}
 	void poll() {
-		int i = 0;
 		wire.beginTransmission(CON);
 		wire.write(0);
-		while (wire.endTransmission()) { Serial.print(i++); };
+		while (wire.endTransmission());
 		delayMicros(157);
 		wire.requestFrom(CON, 6);
 		wire.readBytes(raw, 6);
 		updateReport();
-		checkReset();
 	}
 	//starts attachment unencrypted
 	void init() {
@@ -886,8 +801,8 @@ public:
 		wire.write(0x55);
 		if (wire.endTransmission()) {
 			//SOFT_RESET();
-			init();
-			return;
+			//init();
+			//return;
 		}
 		wire.beginTransmission(CON);
 		wire.write(0xFB);
@@ -899,15 +814,19 @@ public:
 protected:
 	i2c_t3 wire;
 	i2c_pins pins;
-	void updateReport() {}
-	void checkReset() {
-		uint8_t c = 0xFF;
-		for (int i = 0; i < 6; i++)
-			c &= raw[i];
-		if (c == 0xFF)
-			//SOFT_RESET();
-			init();
-	}
+	virtual void updateReport() {}
+};
+
+struct ncreport {
+	uint8_t sx;
+	uint8_t sy;
+
+	uint32_t ax : 10;
+	uint32_t ay : 10;
+	uint32_t az : 10;
+
+	uint32_t c : 1;
+	uint32_t z : 1;
 };
 
 class Nunchuck : public WiiAttachment {
@@ -927,6 +846,40 @@ protected:
 		report.c = ~raw[5] >> 1;
 		report.z = ~raw[5];
  	}
+};
+
+struct ccreport {
+	uint32_t sx : 6;
+	uint32_t sy : 6;
+	uint32_t cx : 5;
+	uint32_t cy : 5;
+
+	uint32_t lt : 5;
+	uint32_t rt : 5;
+
+	union {
+		uint8_t buttons[2] = { 1, 0 };
+
+		struct {
+			uint8_t : 1;
+			uint8_t r : 1;
+			uint8_t start : 1;
+			uint8_t home : 1;
+			uint8_t select : 1;
+			uint8_t l : 1;
+			uint8_t dd : 1;
+			uint8_t dr : 1;
+
+			uint8_t du : 1;
+			uint8_t dl : 1;
+			uint8_t zr : 1;
+			uint8_t x : 1;
+			uint8_t a : 1;
+			uint8_t y : 1;
+			uint8_t b : 1;
+			uint8_t zl : 1;
+		};
+	};
 };
 
 class ClassicController : public WiiAttachment {
