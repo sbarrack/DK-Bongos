@@ -28,7 +28,7 @@
 	Make a logic analyzer out of Teensy to figure out how 
 	Dreamcast Maracas work.
 	*/
-
+//#include <i2c_t3.h>
 #include "lib.h"
 
 #define buffr 6
