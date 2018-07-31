@@ -69,8 +69,8 @@ const uint8_t nunchuck[6] = { 0, 0, 0xA4, 0x20, 0, 0 };
 const uint8_t classic[6] = { 0, 0, 0xA4, 0x20, 1, 1 };		//no handles
 const uint8_t classicPro[6] = { 1, 0, 0xA4, 0x20, 1, 1 };	//handles
 //TODO
-/*const uint8_t guitar[6] = { 0, 0, 0xA4, 0x20, 1, 3 };
-const uint8_t drums[6] = { 1, 0, 0xA4, 0x20, 1, 3 };
+const uint8_t guitar[6] = { 0, 0, 0xA4, 0x20, 1, 3 };
+/*const uint8_t drums[6] = { 1, 0, 0xA4, 0x20, 1, 3 };
 const uint8_t turntable[6] = { 3, 0, 0xA4, 0x20, 1, 3 };
 const uint8_t tatacon[6] = { 0, 0, 0xA4, 0x20, 1, 0x11 };
 const uint8_t graphicTablet[6] = { 0xFF, 0, 0xA4, 0x20, 0, 0x13 };*/
@@ -314,7 +314,55 @@ protected:
 		report.lt = raw[2] >> 2 | raw[3] >> 5;
 		report.rt = raw[3];
 		
-		report.buttons[0] = raw[4];
-		report.buttons[1] = raw[5];
+		report.buttons[0] = ~raw[4];
+		report.buttons[1] = ~raw[5];
+	}
+};
+
+struct ghreport {
+	uint32_t sx : 6;
+	uint32_t sy : 6;
+
+	uint32_t cy : 5;
+	uint32_t rt : 5;
+
+	union {
+		uint8_t buttons[2];
+		
+		struct {
+			uint8_t : 1;
+			uint8_t dd : 1;
+			uint8_t : 1;
+			uint8_t select : 1;
+			uint8_t : 1;
+			uint8_t start : 1;
+			uint8_t : 2;
+
+			uint8_t x : 1;
+			uint8_t b : 1;
+			uint8_t z : 1;
+			uint8_t a : 1;
+			uint8_t y : 1;
+			uint8_t : 2;
+			uint8_t du : 1;
+		};
+	};
+};
+
+class Guitar : public WiiAttachment {
+public:
+	ghreport report;
+	Guitar() : WiiAttachment() {}
+	Guitar(int bus, i2c_pins pins) : WiiAttachment(bus, pins) {}
+protected:
+	void updateReport() {
+		report.sx = raw[0];
+		report.sy = raw[1];
+
+		report.cy = raw[2];
+		report.rt = raw[3];
+
+		report.buttons[0] = ~raw[4];
+		report.buttons[1] = ~raw[5];
 	}
 };

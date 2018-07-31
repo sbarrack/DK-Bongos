@@ -35,7 +35,7 @@
 #define buffSize 200
 
 //N64Controller n64c(12);
-Nunchuck nc;
+Guitar gh;
 /*
 inline GCReport bongoTest(GCReport r);
 inline GCReport bongofy(GCReport r);
@@ -90,17 +90,12 @@ void setup()
 	lightShield = shieldOn = wasPressed = inv = cr = cl = cd = cu = nn = false;
 	xLast = yLast = 0;
 	*/
-	nc.init();
+	gh.init();
 }
 
 void loop()
 {
-	nc.poll();
-	Serial.print(nc.report.c ? "C" : "_");
-	Serial.print(nc.report.z ? "Z " : "_ ");
-	Serial.print(nc.report.sx, HEX);
-	Serial.print(",");
-	Serial.println(nc.report.sy, HEX);
+	
 	delay(17);
 }
 /*
