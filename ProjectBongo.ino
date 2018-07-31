@@ -17,33 +17,31 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 	For any issues, please contact stephen.barrack12@yahoo.com.
-	*/
+*/
 
 /*	Special thanks to the Custom GameCube Controller modding cummunity.
 	I couldn't have done this without your help and encouragement!
 		<3 Steve
-	*/
+*/
 
-/*TODO: On bongos remap the special attacks, snapback/turnarounds. 
-	Make a logic analyzer out of Teensy to figure out how 
-	Dreamcast Maracas work.
-	*/
+//TODO:
+//On bongos, remap the special attacks, snapback/turnarounds. 
+//Make a logic analyzer out of Teensy to figure out how Dreamcast Maracas work.
+
 //#include <i2c_t3.h>
-#include "lib.h"
+#include "wii.h"
 
-#define buffr 6
-#define buffSize 200
+/*#define buffr 6
+#define buffSize 200*/
 
-//N64Controller n64c(12);
-Guitar gh;
-/*
-inline GCReport bongoTest(GCReport r);
+GuitarWii gh;
+
+/*inline GCReport bongoTest(GCReport r);
 inline GCReport bongofy(GCReport r);
 inline GCReport jalhalla(GCReport r);
 inline GCReport noTapJump(GCReport r);
 inline GCReport tiltStick(GCReport r);
-*/
-/*
+
 union bongoReport {
 	uint8_t raw[2];
 
@@ -68,38 +66,36 @@ double angle, ang1 = atan2(114, -127), ang2 = atan2(114, 127);
 bool lightShield, shieldOn, nothing, wasPressed, inv, cr, cl, cd, cu, nn, wasn;
 uint8_t xLast, yLast;
 
-static constexpr bongoReport bongoDefRep = { 0, TRIGGER_LOW };
-*/
+static constexpr bongoReport bongoDefRep = { 0, TRIGGER_LOW };*/
+
 void setup()
 {
 	Serial.begin(115200);
 	while (!Serial);
-	/*
-	pinMode(13, OUTPUT);
+	
+	/*pinMode(13, OUTPUT);
 	digitalWriteFast(13, HIGH);
 	Serial.println("ProjectBongo | Copyright (C) 2018 | Stephen Barrack");
 	Serial.println("This program comes with ABSOLUTELY NO WARRANTY.");
 	Serial.println("This is free software, and you are welcome to redistribute it under certain conditions.");
 	Serial.println("View README and LICENSE included with this project for full details.");
 	delay(1000);
-	digitalWriteFast(13, LOW);
-	*/
-	/*
-	bongo = bongoDefRep;
+	digitalWriteFast(13, LOW);*/
+	
+	/*bongo = bongoDefRep;
 	wasn = true;
 	lightShield = shieldOn = wasPressed = inv = cr = cl = cd = cu = nn = false;
-	xLast = yLast = 0;
-	*/
+	xLast = yLast = 0;*/
+
 	gh.init();
 }
 
 void loop()
 {
-	
 	delay(17);
 }
-/*
-inline GCReport bongoTest(GCReport r) {
+
+/*inline GCReport bongoTest(GCReport r) {
 	r = defaultGCReport;
 	r.a = buff[0].tl;
 	r.b = buff[0].tr;
@@ -346,5 +342,4 @@ inline GCReport tiltStick(GCReport r) {
 	r.cxAxis = 128;
 	r.cyAxis = 128;
 	return r;
-}
-*/
+}*/
