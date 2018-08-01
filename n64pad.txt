@@ -1,35 +1,4 @@
-/*	This library is written to better suit the ARM architecture and make
-	use of Teensy's features. Originally, my understanding of the N64/GCN
-	controller protocol was that it was something proprietary, however,
-	it is simply a faster version of the 1-wire Interface from MSB to LSB
-	[1,2]. My implementation of this uses bit-banging to handle the data
-	[3]. Additionally, Wii Remote attachment controllers use the 2-wire 
-	Interface (TWI/I2C) which is supported by Teensy [4]. Thirdly, the 
-	GB/GBC/GBA link cable uses SPI with both handhelds as the master/slave 
-	with a 3-wire connection [5]. Timing for ARM instructions can be found 
-	in the ARM Information Center [6] while usage can be found in the 
-	reference manual section A7.7 [7]. Also, while the No-Operation 
-	Instruction (NOP) consumes time on AVR, the ARM pipeline treats them as 
-	padding only [8] so I adjusted accordingly to get exact timing. For more 
-	information on the full details of the N64/GCN protocol see Squid64's 
-	site [9]; it lists all the commands and devices used.
-
-	[1] http://www.int03.co.uk/crema/hardware/gamecube/gc-control.html
-	[2] https://en.wikipedia.org/wiki/1-wire
-	[3] https://en.wikipedia.org/wiki/Bit_banging
-	[4] http://wiibrew.org/wiki/Wiimote
-	[5] https://en.wikipedia.org/wiki/Serial_Peripheral_Interface
-	[6] http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.ddi0439b/CHDDIGAC.html
-	[7] https://www.pjrc.com/teensy/beta/DDI0403D_arm_architecture_v7m_reference_manual.pdf
-	[8] http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.dui0553a/CHDJJGFB.html
-	[9] https://sites.google.com/site/consoleprotocols/home/techinfo/nintendo-joy-bus-documentation?authuser=0
-
-	Controllers: GC GCController, DK Bongos, GC Keyboard (not tested),
-	Nunchuck, Classic Controller, N64 Controller, GBA (not tested)
-	Arduinos: Teensy 3.5 120MHz
-	*/
-
-//analog values
+/*//analog values
 #define ANALOG_ERROR	0x00	//The controller disconnects if any analog sensor fails.
 #define ANALOG_MIN		0x01
 #define ANALOG_MAX		0xFF	
@@ -72,146 +41,38 @@
 
 //commands, positioned at front of word to be shifted out, 
 //	the MSB in each byte is a flag to stop (stop bit, 0x80)
-#define RESET			0xFF000000
-#define INITIALIZE		0x00000000
-#define POLL_N64		0x01000000
-#define READ_N64		0x02000000
-#define WRITE_N64		0x03000000
-#define READ_EEPROM		0x04000000
-#define WRITE_EEPROM	0x05000000
-/*#define INIT_EREADER	0x06000000
-#define READ_EREADER	0x07000000
-#define WRITE_EREADER	0x08000000
+#define RESET			0xFF800000
+#define INITIALIZE		0x00800000
+#define POLL_N64		0x01800000
+#define READ_N64		0x02800000
+#define WRITE_N64		0x03800000
+#define READ_EEPROM		0x04800000
+#define WRITE_EEPROM	0x05800000
+/*#define INIT_EREADER	0x06800000
+#define READ_EREADER	0x07800000
+#define WRITE_EREADER	0x08800000
 //VRU 0x09-D
-#define SCAN_N64		0x13000000
-#define READ_GBA		0x14000000
-#define WRITE_GBA		0x15000000
-#define FORCE_FEEDBACK	0x30000000	//gc steering wheel*/
-#define ORIGIN_GC		0x41000000
-#define SCAN_GC			0x54000000
+#define SCAN_N64		0x13800000
+#define READ_GBA		0x14800000
+#define WRITE_GBA		0x15800000
+#define FORCE_FEEDBACK	0x30800000	//gc steering wheel*/
+#define ORIGIN_GC		0x41800000
+#define SCAN_GC			0x54800000
 //these ones have the optional extra byte parameters
-#define SHORT_POLL_GC	0x40000000
-//#define CALIBRATE_GC	0x42000000	//forces rumble mode 0x02
-#define POLL_GC			0x43000000	//forces rumble mode 0x02
+#define SHORT_POLL_GC	0x40800000
+//#define CALIBRATE_GC	0x42800000	//forces rumble mode 0x02
+#define POLL_GC			0x43800000	//forces rumble mode 0x02
 //other 2 command bytes ignore the 6 MSBs
-//2nd command byte, poll size
+//2nd command byte, poll size (XOR with byte 1)
 /*#define SHORTEST	0x00000000
 #define SHORTER		0x00010000
 #define SHORT		0x00020000*/
-#define NOT_SHORT	0x00030000
-//3rd command byte, rumble mode
-#define NORMAL_RUMBLE	0x00000000
-#define RUMBLE_ON		0x00000100
-#define WAS_RUMBLE		0x00000200
+#define NOT_SHORT	0x00838000
+//3rd command byte, rumble mode (XOR with the other 2 bytes)
+#define NORMAL_RUMBLE	0x00000880
+#define RUMBLE_ON		0x00000980
+#define WAS_RUMBLE		0x00000A80
 //#define ?		0x00000300
-
-/*//scancodes
-#define GCKB_HOME			0x06
-#define GCKB_END			0x07
-#define GCKB_PAGE_UP		0x08
-#define GCKB_PAGE_DOWN		0x09
-#define GCKB_SCROLL_LOCK	0x0A
-#define GCKB_A				0x10
-#define GCKB_B				0x11
-#define GCKB_C				0x12
-#define GCKB_D				0x13
-#define GCKB_E				0x14
-#define GCKB_F				0x15
-#define GCKB_G				0x16
-#define GCKB_H				0x17
-#define GCKB_I				0x18
-#define GCKB_J				0x19
-#define GCKB_K				0x1A
-#define GCKB_L				0x1B
-#define GCKB_M				0x1C
-#define GCKB_N				0x1D
-#define GCKB_O				0x1E
-#define GCKB_P				0x1F
-#define GCKB_Q				0x20
-#define GCKB_R				0x21
-#define GCKB_S				0x22
-#define GCKB_T				0x23
-#define GCKB_U				0x24
-#define GCKB_V				0x25
-#define GCKB_W				0x26
-#define GCKB_X				0x27
-#define GCKB_Y				0x28
-#define GCKB_Z				0x29
-#define GCKB_1				0x2A
-#define GCKB_2				0x2B
-#define GCKB_3				0x2C
-#define GCKB_4				0x2D
-#define GCKB_5				0x2E
-#define GCKB_6				0x2F
-#define GCKB_7				0x30
-#define GCKB_8				0x31
-#define GCKB_9				0x32
-#define GCKB_0				0x33
-#define GCKB_MINUS			0x34
-#define GCKB_PARENTHESIS	0x34
-#define GCKB_NP_MINUS		0x34
-#define GCKB_PLUS			0x35
-#define GCKB_EQUALS			0x35
-#define GCKB_PRINT_SCREEN	0x36
-#define GCKB_NP_SLASH		0x36
-#define GCKB_PAUSE			0x37
-#define GCKB_SYSTEM_REQ		0x37
-#define GCKB_NP_ASTERISK	0x37
-#define GCKB_OPEN_BRACKET	0x38
-#define GCKB_OPEN_BRACE		0x38
-#define GCKB_SEMICOLON		0x39
-#define GCKB_COLON			0x39
-#define GCKB_NP_PLUS		0x39
-#define GCKB_QUOTE			0x3A
-#define GCKB_APOSTROPHE		0x3A
-#define GCKB_CLOSE_BRACKET	0x3B
-#define GCKB_CLOSE_BRACE	0x3B
-#define GCKB_COMMA			0x3C
-#define GCKB_LESS_THAN		0x3C
-#define GCKB_PERIOD			0x3D
-#define GCKB_GREATER_THAN	0x3D
-#define GCKB_NP_POINT		0x3D
-#define GCKB_FORWARD_SLASH	0x3E
-#define GCKB_QUESTION_MARK	0x3E
-#define GCKB_HYPHEN			0x3F
-#define GCKB_DASH			0x3F
-#define GCKB_F1				0x40
-#define GCKB_F2				0x41
-#define GCKB_F3				0x42
-#define GCKB_F4				0x43
-#define GCKB_F5				0x44
-#define GCKB_F6				0x45
-#define GCKB_F7				0x46
-#define GCKB_F8				0x47
-#define GCKB_F9				0x48
-#define GCKB_F10			0x49
-#define GCKB_F11			0x4A
-#define GCKB_F12			0x4B
-#define GCKB_ESCAPE			0x4C
-#define GCKB_INSERT			0x4D
-#define GCKB_DELETE			0x4E
-#define GCKB_GRAVE			0x4F
-#define GCKB_TILDE			0x4F
-#define GCKB_BACKSPACE		0x50
-#define GCKB_TAB			0x51
-#define GCKB_CAPSLOCK		0x53
-#define GCKB_L_SHIFT		0x54
-#define GCKB_L_CONTROL		0x56
-#define GCKB_L_ALT			0x57
-#define GCKB_SHIFT			0x54
-#define GCKB_CONTROL		0x56
-#define GCKB_ALT			0x57
-#define GCKB_L_OS			0x58
-#define GCKB_SPACE			0x59
-#define GCKB_R_OS			0x5A
-#define GCKB_MENU			0x5B
-#define GCKB_LEFT			0x5C
-#define GCKB_DOWN			0x5D
-#define GCKB_UP				0x5E
-#define GCKB_RIGHT			0x5F
-#define GCKB_ENTER			0x61
-#define GCKB_RETURN			0x61
-#define GCKB_NUMLOCK		0x6A*/
 
 #define CLEAR_BIT "str %2, [%1, 8] \n"	//offset points to gpiox_cor
 #define SET_BIT "str %2, [%1, 4] \n"
@@ -220,9 +81,9 @@
 //low 3us, high 1us
 #define SEND_ZERO CLEAR_BIT WAIT WAIT WAIT SET_BIT WAIT
 //low 1us, high 2us
-#define SEND_STOP CLEAR_BIT WAIT SET_BIT WAIT WAIT
+#define SEND_STOP CLEAR_BIT WAIT SET_BIT //WAIT WAIT
 //low 1us, high 3us
-#define SEND_ONE SEND_STOP WAIT
+#define SEND_ONE SEND_STOP WAIT WAIT WAIT
 //read in the center of the period vs anticipating edge, take advantage of the 2 cycles (one for data, one for parity check)
 #define GET_BIT WAIT WAIT "ldr r0, [%1, 16] \n" /* read port value */ "str r0, [%0] \n" /* store into array */ "add %0, %0, 4 \n" /* increment array ptr */ WAIT WAIT
 #define GET_BYTE GET_BIT GET_BIT GET_BIT GET_BIT GET_BIT GET_BIT GET_BIT GET_BIT
@@ -338,7 +199,7 @@ public:
 	Controller() : Controller(2, &CORE_PIN2_PORTREG, CORE_PIN2_BITMASK) {}
 	void init() {
 		int len = 3;
-		transceive(INITIALIZE, 1, len);
+		transceive(INITIALIZE, len);
 		//copy
 		for (int i = 0; i < len; i++) {
 			state.raw[i] = raw[i];
@@ -349,21 +210,37 @@ protected:
 	volatile uint32_t *genReg;
 	uint8_t raw[10];
 	//TODO: make it wait based on F_CPU
-	inline void transceive(uint32_t command, uint32_t size, uint32_t len) {
+	inline void transceive(uint32_t command, uint32_t len) {
 		uint32_t buffer[80] = { 0 };
 		__disable_irq();
 		//TODO: program dynamically
 		__asm__ volatile(
-			//0x00, init
-			SEND_ZERO SEND_ZERO SEND_ZERO SEND_ZERO
-			SEND_ZERO SEND_ZERO SEND_ZERO SEND_ZERO
+			"ldr r1, [%3] \n"
+			"3: \n"
+			"ldr r2, =7 \n"
+			"2: \n"
+			"lsls r1, 1 \n"
+			CLEAR_BIT WAIT
+			"bcc 1f \n"
+			SET_BIT
+			"1: \n"
+			WAIT WAIT SET_BIT WAIT
+			"subs r2, 1 \n"
+			"bne 2b \n"
+			"lsls r1, 1 \n"
+			"lsr r1, 1 \n"
+			"bcc 3b \n"
 			SEND_STOP
+			//0x00, init
+			//SEND_ZERO SEND_ZERO SEND_ZERO SEND_ZERO
+			//SEND_ZERO SEND_ZERO SEND_ZERO SEND_ZERO
+			//SEND_STOP
 			//receive bytes
 			GET_BYTE GET_BYTE GET_BYTE //GET_BYTE
 			//screw waiting for the stop bit
-			:: "r" (buffer), "r" (genReg), "r" (bitmask)//,
-				//"r" (command), "r" (size), "r" (len)
-			: "r0"
+			:: "r" (buffer), "r" (genReg), "r" (bitmask),
+				"r" (command)
+			: "r0", "r1", "r2"
 			);
 		__enable_irq();
 		//parse buffer
@@ -371,7 +248,7 @@ protected:
 		int g = 7;
 		for (int h = 0; h < (int)len; h++) {
 			for (int i = h * 8; i < h * 8 + 8; i++) {
-				if (buffer[i] & bitmask) {
+				if (buffer[i]) { //& bitmask) {
 					data[h] |= _BV(g);
 				}
 				g--;
@@ -392,7 +269,8 @@ N64Controller() : Controller() {}
 N64Controller(const int pin) : Controller(pin) {}
 void poll() {
 uint8_t command[] = { 1 };
-transceive(command, 4, report.raw);
+transceive(command, 4);
+//copy here
 }
 protected:
 
@@ -406,15 +284,18 @@ GCController() : Controller() {}
 GCController(const int pin) : Controller(pin) {}
 void center() {
 uint8_t command[] = { 0x41 };
-transceive(command, 10, origin.raw);
+transceive(command, 10);
+//copy here
 }
 void poll() {
 uint8_t command[] = { 0x43 };
-transceive(command, 8, report.raw);
+transceive(command, 8);
+//copy here
 }
 void scan() {
 uint8_t command[] = { 0x54 };
-transceive(command, 8, report.raw);
+transceive(command, 8);
+//copy here
 }
 protected:
 
