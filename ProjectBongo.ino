@@ -69,11 +69,11 @@ static constexpr bongoReport bongoDefRep = { 0, TRIGGER_LOW };*/
 
 void setup()
 {
+	//Serial.begin(115200);
+	//while (!Serial);
+
 	pinMode(13, OUTPUT);
 	digitalWriteFast(13, HIGH);
-
-	Serial.begin(115200);
-	while (!Serial);
 	
 	/*pinMode(13, OUTPUT);
 	digitalWriteFast(13, HIGH);
@@ -90,19 +90,84 @@ void setup()
 	xLast = yLast = 0;*/
 
 	gh.init();
-	Serial.print("ID = 0x");
+	/*Serial.print("ID = 0x");
 	for (int i = 0; i < 6; i++) {
 		if (gh.id[i] < 0x10)
 			Serial.print("0");
 		Serial.print(gh.id[i], HEX);
 	}
-	//Serial.println("\n\nData:");
+	//Serial.println("\n\nData:");*/
 }
 
 void loop()
 {
 	gh.poll();
-	
+
+	if (gh.report.dd || gh.report.du) {
+		switch ((gh.report.buttons[1] & B11101000) >> 3) 
+		{
+		case 0:	//A11/E, EADGBE
+			//Serial.println("open");
+			usbMIDI.sendNoteOn(64, 127, 1);
+			usbMIDI.sendNoteOn(69, 127, 1);
+			usbMIDI.sendNoteOn(74, 127, 1);
+			usbMIDI.sendNoteOn(79, 127, 1);
+			usbMIDI.sendNoteOn(83, 127, 1);
+			usbMIDI.sendNoteOn(88, 127, 1);
+			break;
+		case B10000:	//D, XXDADF#
+			//Serial.println("D");
+			break;
+		case B11000:	//F#m, F#C#F#AC#F#
+			//Serial.println("F#m");
+			break;
+		case B00100:	//G, GBDGBG
+			//Serial.println("G");
+			break;
+		case B00101:	//A, XAEAC#E
+			//Serial.println("A");
+			break;
+		case B01000:	//Bm, XBF#BDF#
+			//Serial.println("Bm");
+			break;
+		case B10100:	//C, XCEGCE
+			//Serial.println("C");
+			break;
+		case B00001:	//Am, XAEACE
+			//Serial.println("Am");
+			break;
+		case B01100:	//C#m, XDADFA
+			//Serial.println("C#m");
+			break;
+		case B01101:	//E, EBEG#BE
+			//Serial.println("E");
+			break;
+		case B01001:	//Em, EBEGBE
+			//Serial.println("Em");
+			break;
+		case B10001:	//Cm, XDbAbDbEAb
+			//Serial.println("Cm");
+			break;
+		default:
+			break;
+		}
+
+		usbMIDI.send_now();
+	}
+	else {
+		//decay all notes a bit here
+		usbMIDI.sendNoteOff(64, 127, 1);
+		usbMIDI.sendNoteOff(69, 127, 1);
+		usbMIDI.sendNoteOff(74, 127, 1);
+		usbMIDI.sendNoteOff(79, 127, 1);
+		usbMIDI.sendNoteOff(83, 127, 1);
+		usbMIDI.sendNoteOff(88, 127, 1);
+
+		usbMIDI.send_now();
+	}
+
+	while (usbMIDI.read());
+
 	/*Serial.print(gh.report.sx);
 	Serial.print(",");
 	Serial.print(gh.report.sy);
