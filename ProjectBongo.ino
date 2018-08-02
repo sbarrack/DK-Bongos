@@ -28,7 +28,6 @@
 //On bongos, remap the special attacks, snapback/turnarounds. 
 //Make a logic analyzer out of Teensy to figure out how Dreamcast Maracas work.
 
-//#include <i2c_t3.h>
 #include "wii.h"
 
 /*#define buffr 6
@@ -70,6 +69,9 @@ static constexpr bongoReport bongoDefRep = { 0, TRIGGER_LOW };*/
 
 void setup()
 {
+	pinMode(13, OUTPUT);
+	digitalWriteFast(13, HIGH);
+
 	Serial.begin(115200);
 	while (!Serial);
 	
@@ -88,11 +90,38 @@ void setup()
 	xLast = yLast = 0;*/
 
 	gh.init();
+	Serial.print("ID = 0x");
+	for (int i = 0; i < 6; i++) {
+		if (gh.id[i] < 0x10)
+			Serial.print("0");
+		Serial.print(gh.id[i], HEX);
+	}
+	//Serial.println("\n\nData:");
 }
 
 void loop()
 {
-	delay(17);
+	gh.poll();
+	
+	/*Serial.print(gh.report.sx);
+	Serial.print(",");
+	Serial.print(gh.report.sy);
+	Serial.print(" ");
+	Serial.print(gh.report.rt - 0xE, HEX);
+	Serial.print(gh.report.a ? " #" : " _");
+	Serial.print(gh.report.b ? "#" : "_");
+	Serial.print(gh.report.y ? "#" : "_");
+	Serial.print(gh.report.z ? "#" : "_");
+	Serial.print(gh.report.x ? "# " : "_ ");
+	Serial.print(gh.report.cy > 0x03 && gh.report.cy < 0x08 ? "#" : "_");
+	Serial.print(gh.report.cy > 0x06 && gh.report.cy < 0x0E && gh.report.cy != 0x0F ? "#" : "_");
+	Serial.print(gh.report.cy > 0x0B && gh.report.cy < 0x16 && gh.report.cy != 0x0F ? "#" : "_");
+	Serial.print(gh.report.cy > 0x13 && gh.report.cy < 0x1B ? "#" : "_");
+	Serial.print(gh.report.cy > 0x19 && gh.report.cy < 0x21 ? "# " : "_ ");
+	Serial.print(gh.report.select ? "-" : "_");
+	Serial.print(gh.report.start ? "+ " : "_ ");
+	Serial.println(gh.report.dd ? "v" : gh.report.du ? "^" : "-");
+	delay(17);*/
 }
 
 /*inline GCReport bongoTest(GCReport r) {

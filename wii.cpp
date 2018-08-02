@@ -18,9 +18,10 @@
 	For any issues, please contact stephen.barrack12@yahoo.com.
 */
 
-#import "wii.h"
+#include "wii.h"
 
-inline void WiiAttachment::identify() {
+//TODO: It's shifted one byte for some reason, fix it.
+void WiiAttachment::identify() {
 	wire.beginTransmission(CON);
 	wire.write(0xFA);
 	wire.write(0);
@@ -30,7 +31,7 @@ inline void WiiAttachment::identify() {
 	wire.readBytes(id, 6);
 }
 
-inline void WiiAttachment::poll() {
+void WiiAttachment::poll() {
 	wire.beginTransmission(CON);
 	wire.write(0);
 	while (wire.endTransmission());
@@ -40,21 +41,17 @@ inline void WiiAttachment::poll() {
 	updateReport();
 }
 
-inline void WiiAttachment::init() {
+void WiiAttachment::init() {
 	wire.begin(I2C_MASTER, 0, pins, I2C_PULLUP_EXT, 400000);
 	wire.beginTransmission(CON);
 	wire.write(0xF0);
 	wire.write(0x55);
-	if (wire.endTransmission()) {
-		//SOFT_RESET();
-		//init();
-		//return;
-	}
+	wire.endTransmission();
 	wire.beginTransmission(CON);
 	wire.write(0xFB);
 	wire.write(0);
 	while (wire.endTransmission());
-	//identify();
+	identify();
 	poll();
 }
 

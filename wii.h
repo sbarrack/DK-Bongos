@@ -24,7 +24,7 @@
 	[1] http://wiibrew.org/wiki/Wiimote/Extension_Controllers
 	[2] https://en.wikipedia.org/wiki/I%C2%B2C
 	
-	Controllers: Nunchuck, Classic Controller (Pro), GuitarWii (not tested)
+	Controllers: Nunchuck, Classic Controller (Pro), Guitar
 	Arduinos: Teensy 3.5 120MHz
 	
 	The Wii Motion Plus is a useable device and does poll properly, but I
@@ -48,8 +48,8 @@
 const uint8_t nunchuck[6] = { 0, 0, 0xA4, 0x20, 0, 0 };
 const uint8_t classic[6] = { 0, 0, 0xA4, 0x20, 1, 1 };		//no handles
 const uint8_t classicPro[6] = { 1, 0, 0xA4, 0x20, 1, 1 };	//handles
-//TODO
 const uint8_t guitar[6] = { 0, 0, 0xA4, 0x20, 1, 3 };
+//TODO
 /*const uint8_t drums[6] = { 1, 0, 0xA4, 0x20, 1, 3 };
 const uint8_t turntable[6] = { 3, 0, 0xA4, 0x20, 1, 3 };
 const uint8_t tatacon[6] = { 0, 0, 0xA4, 0x20, 1, 0x11 };
@@ -62,9 +62,9 @@ public:
 	uint8_t id[6];
 	WiiAttachment() : wire(i2c_t3(0)), pins(I2C_PINS_16_17) {}
 	WiiAttachment(int bus, i2c_pins pins) : wire(i2c_t3(bus)), pins(pins) {}
-	inline void identify();
-	inline void poll();
-	inline void init();	//starts attachment unencrypted
+	void identify();
+	void poll();
+	void init();	//starts attachment unencrypted
 protected:
 	i2c_t3 wire;
 	i2c_pins pins;
@@ -146,21 +146,21 @@ struct GuitarWiiReport {
 		uint8_t buttons[2];
 		
 		struct {
-			uint8_t : 1;
-			uint8_t dd : 1;
+			uint8_t : 2;
+			uint8_t start : 1;
 			uint8_t : 1;
 			uint8_t select : 1;
 			uint8_t : 1;
-			uint8_t start : 1;
-			uint8_t : 2;
-
-			uint8_t x : 1;
-			uint8_t b : 1;
-			uint8_t z : 1;
-			uint8_t a : 1;
-			uint8_t y : 1;
-			uint8_t : 2;
+			uint8_t dd : 1;
+			uint8_t : 1;
+					  
 			uint8_t du : 1;
+			uint8_t : 2;
+			uint8_t y : 1;
+			uint8_t a : 1;
+			uint8_t z : 1;
+			uint8_t b : 1;
+			uint8_t x : 1;
 		};
 	};
 };
