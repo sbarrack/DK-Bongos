@@ -20,7 +20,7 @@
 
 #include "wii.h"
 
-//TODO: It's shifted one byte for some reason, fix it.
+//TODO: It's shifted one byte for some reason, maybe timing, fix it.
 void WiiAttachment::identify() {
 	wire.beginTransmission(CON);
 	wire.write(0xFA);
