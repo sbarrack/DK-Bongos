@@ -35,25 +35,16 @@
 #pragma once
 #include <i2c_t3.h>
 
-//useful macros
-#define delayMicros(us) delayMicroseconds(us)
-//found somewhere on the internet, resets the Teensy
-#define SOFT_RESET() (*(volatile uint32_t*)0xE000ED0C) = 0x05FA0004
-
-//twi slave device numbers
 #define CON		0x52
-//#define PLUS	0x53
+
+#define MICROS(us) delayMicroseconds(us)
+#define RESET() (*(volatile uint32_t*)0xE000ED0C) = 0x05FA0004
 
 //wiimote attachment ids
 const uint8_t nunchuck[6] = { 0, 0, 0xA4, 0x20, 0, 0 };
 const uint8_t classic[6] = { 0, 0, 0xA4, 0x20, 1, 1 };		//no handles
 const uint8_t classicPro[6] = { 1, 0, 0xA4, 0x20, 1, 1 };	//handles
 const uint8_t guitar[6] = { 0, 0, 0xA4, 0x20, 1, 3 };
-//TODO
-/*const uint8_t drums[6] = { 1, 0, 0xA4, 0x20, 1, 3 };
-const uint8_t turntable[6] = { 3, 0, 0xA4, 0x20, 1, 3 };
-const uint8_t tatacon[6] = { 0, 0, 0xA4, 0x20, 1, 0x11 };
-const uint8_t graphicTablet[6] = { 0xFF, 0, 0xA4, 0x20, 0, 0x13 };*/
 
 //TODO: check for different min timings for F_CPU, add a re-init feature
 class WiiAttachment {
