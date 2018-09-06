@@ -23,12 +23,44 @@
 	one sick controller! <3
 */
 
-#include <NinTeensy.h>
-#include "wii.h"
+#include <i2c_t3.h>
+#include "ultradolphin.h"
+#include "revolution.h"
+
+/*//analog values
+#define ANALOG_ERROR	0x00	//The controller disconnects if any analog sensor fails.
+#define ANALOG_MIN		0x01
+#define ANALOG_MAX		0xFF
+#define ANALOG_MID		0x80	//127 is not the center due to the error condition.
+#define TRIGGER_LOW		0x1F
+#define TRIGGER_FLOOR	0x49	//Light-shield is active above this value.
+#define TRIGGER_CEIL	0xFF	//TODO: need to find value just before the trigger button goes high
+#define MIC_HIGH		0x6F
+#define MIC_LOW			0x70
+//TODO: double check these values and the adjusted ones
+#define DEAD_LOW		0x68
+#define DEAD_HIGH		0x98
+#define STICK_LOW		0x4B
+#define STICK_HIGH		0xB3
+#define STICK_HIGHER	0xB5
+#define STICK_MAX		0xE9
+#define STICK_MIN		0x17
+//adjusted analog values for N64 which is signed
+/*#define ANALOG_ERROR_ADJ	-128
+#define ANALOG_MIN_ADJ		-127
+#define ANALOG_MAX_ADJ		127
+#define ANALOG_MID_ADJ		0
+#define DEAD_LOW_ADJ		-24
+#define DEAD_HIGH_ADJ		24
+#define STICK_LOW_ADJ		-53
+#define STICK_HIGHISH_ADJ	51
+#define STICK_HIGH_ADJ		53
+#define STICK_MAX_ADJ		105
+#define STICK_MIN_ADJ		-105*/
 
 GuitarWii gh;
-gcConsole gc(2);
-gcReport gcr;
+Console gc;
+gcData gcc;
 const double ang1 = atan2(114, -127);
 const double ang2 = atan2(114, 127);
 int wasPressed, inv, wasn;
@@ -40,72 +72,76 @@ inline gcReport tiltStick(gcReport r);
 void setup()
 {
 	gh.init();
-	gcr = gcDefault.report;
-	
+	gcc = gcDefault;
+	//need to know what order the console sends commands
+	//may be just init and simple poll or init, origin, poll with rumble
+	gc.init(gcc);	//TODO: have different prototypes
 }
 
 void loop()
 {
 	gh.poll();
 
-	gc.write(gcr);
+	//TODO: write to report, after testing with gcDefault for connectivity
+
+	gc.update(gcc);	//TODO: have different prototypes
 }
 
 inline gcReport jalhalla(gcReport r) {
-	inv = !wasPressed && r.dright ? !inv : inv;
+	inv = !wasPressed && r.dr ? !inv : inv;
 	if (inv) {
-		r.xAxis = ~r.xAxis;
-		r.yAxis = ~r.yAxis;
+		r.sx = ~r.sx;
+		r.sy = ~r.sy;
 	}
-	wasPressed = r.dright;
+	wasPressed = r.dr;
 	return r;
 }
 
 inline gcReport noTapJump(gcReport r) {
-	int y = r.yAxis - 127;
+	int y = r.sy - 127;
 	if (!(r.x || r.y) && y > 53) {
-		int x = r.xAxis - 127;
+		int x = r.sx - 127;
 		double angle = atan2(y, x);
 		if (angle > ang2 && angle < ang1) {
-			r.xAxis = 53 * x / y + 127;
-			r.yAxis = 180;
+			r.sx = 53 * x / y + 127;
+			r.sy = 180;
 		}
 	}
 	return r;
 }
 
 inline gcReport tiltStick(gcReport r) {
-	int cr = r.cxAxis > 170;
-	int cl = r.cxAxis < 84;
-	int cd = r.cyAxis > 164;
-	int cu = r.cyAxis < 90;
+	int cr = r.cx > 170;
+	int cl = r.cx < 84;
+	int cd = r.cy > 164;
+	int cu = r.cy < 90;
 	int nn = cr || cl || cd || cu;
 	r.a |= nn;
 	if (nn && wasn) {
 		if ((cr && cu) || (cr && cd) || (cl && cu) || (cl && cd)) {
-			r.xAxis = 128;
-			r.yAxis = 128;
+			r.sx = 128;
+			r.sy = 128;
 		}
 		else if (cr) {
-			r.xAxis = 170;
-			r.yAxis = 128;
+			r.sx = 170;
+			r.sy = 128;
 		}
 		else if (cl) {
-			r.xAxis = 84;
-			r.yAxis = 128;
+			r.sx = 84;
+			r.sy = 128;
 		}
 		else if (cd) {
-			r.xAxis = 128;
-			r.yAxis = 164;
+			r.sx = 128;
+			r.sy = 164;
 		}
 		else if (cu) {
-			r.xAxis = 128;
-			r.yAxis = 90;
+			r.sx = 128;
+			r.sy = 90;
 		}
 		wasn = false;
 	}
 	if (!nn) wasn = true;
-	r.cxAxis = 128;
-	r.cyAxis = 128;
+	r.cx = 128;
+	r.cy = 128;
 	return r;
 }

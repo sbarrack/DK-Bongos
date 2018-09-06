@@ -18,7 +18,7 @@
 	For any issues, please contact stephen.barrack12@yahoo.com.
 */
 
-#include "wii.h"
+#include "revolution.h"
 
 //TODO: It's shifted one byte for some reason, maybe timing, fix it.
 void WiiAttachment::identify() {
