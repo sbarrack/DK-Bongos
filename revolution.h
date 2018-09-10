@@ -38,7 +38,7 @@
 #define CON		0x52
 
 #define MICROS(us) delayMicroseconds(us)
-#define RESET() (*(volatile uint32_t*)0xE000ED0C) = 0x05FA0004
+#define SOFT_RESET() (*(volatile uint32_t*)0xE000ED0C) = 0x05FA0004
 
 //wiimote attachment ids
 const uint8_t nunchuck[6] = { 0, 0, 0xA4, 0x20, 0, 0 };

@@ -257,11 +257,11 @@ public:
 	}
 	Console() : Console(3, &CORE_PIN3_PORTREG, CORE_PIN3_BITMASK) {}
 	virtual void init(gcData data) {
-		transceive(data.status, 3);
+		//transceive(data.status, 3);
 		//same for origin?
 	}
 	virtual void update(gcData data) {	//leave empty and use child's subroutine
-		transceive(data.report, 8);
+		//transceive(data.report, 8);
 	}
 protected:
 	uint32_t bitmask;

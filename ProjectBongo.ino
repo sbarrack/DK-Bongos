@@ -23,8 +23,7 @@
 	one sick controller! <3
 */
 
-#include <i2c_t3.h>
-#include "ultradolphin.h"
+//#include "ultradolphin.h"
 #include "revolution.h"
 
 /*//analog values
@@ -58,36 +57,105 @@
 #define STICK_MAX_ADJ		105
 #define STICK_MIN_ADJ		-105*/
 
+#define button(num, state)	Joystick.button(num, state)
+#define stickC(x, y)	Joystick.Zrotate(x); Joystick.Z(y)
+
+#define USB_MAX 0x3FF
+#define USB_MID	0x200
+#define USB_MIN	0
+#define buttonX	1
+#define buttonB	2
+#define buttonA	3
+#define buttonY	4
+//#define buttonZL	5
+#define buttonZ	6
+#define buttonL	7
+#define buttonR	8
+//#define SELECT	9
+#define START	10
+
 GuitarWii gh;
-Console gc;
-gcData gcc;
+/*Console gc;
+gcData gcc;*/
 const double ang1 = atan2(114, -127);
 const double ang2 = atan2(114, 127);
 int wasPressed, inv, wasn;
 
-inline gcReport jalhalla(gcReport r);
+inline void guitarUSBupdate();
+/*inline gcReport jalhalla(gcReport r);
 inline gcReport noTapJump(gcReport r);
-inline gcReport tiltStick(gcReport r);
+inline gcReport tiltStick(gcReport r);*/
 
 void setup()
 {
 	gh.init();
-	gcc = gcDefault;
+	Joystick.useManualSend(true);
+	/*gcc = gcDefault;
 	//need to know what order the console sends commands
 	//may be just init and simple poll or init, origin, poll with rumble
-	gc.init(gcc);	//TODO: have different prototypes
+	gc.init(gcc);	//TODO: have different prototypes*/
 }
 
 void loop()
 {
 	gh.poll();
 
+	guitarUSBupdate();
 	//TODO: write to report, after testing with gcDefault for connectivity
 
-	gc.update(gcc);	//TODO: have different prototypes
+	//gc.update(gcc);	//TODO: have different prototypes
 }
 
-inline gcReport jalhalla(gcReport r) {
+inline void guitarUSBupdate() {
+	button(buttonZ, gh.report.x);
+	button(buttonA, gh.report.z);
+	button(buttonX, gh.report.y);
+	button(buttonB, gh.report.b);
+	button(buttonR, gh.report.a);
+	button(START, gh.report.start);
+	Joystick.hat(gh.report.select ? 0 : -1);
+	Joystick.sliderRight(gh.report.rt << 5);
+	Joystick.X(gh.report.sx << 4);
+	Joystick.Y(gh.report.sy << 4);
+	switch (gh.report.cy) {
+	case 0x4:
+		stickC(USB_MID, USB_MAX);
+		break;
+	case 0x7:
+		stickC(USB_MAX, USB_MAX);
+		break;
+	case 0xA:
+		stickC(USB_MAX, USB_MID);
+		break;
+	case 0xC:
+	case 0xD:
+		stickC(USB_MAX, USB_MIN);
+		break;
+	case 0x12:
+	case 0x13:
+		stickC(USB_MID, USB_MIN);
+		break;
+	case 0x14:
+	case 0x15:
+		stickC(USB_MIN, USB_MIN);
+		break;
+	case 0x17:
+	case 0x18:
+		stickC(USB_MIN, USB_MID);
+		break;
+	case 0x1A:
+		stickC(USB_MIN, USB_MAX);
+		break;
+	//case 0x1F:
+	//case 0xF:
+	default:
+		stickC(USB_MID, USB_MID);
+		break;
+	}
+	Joystick.send_now();
+}
+
+/*inline gcReport jalhalla(gcReport r) {
 	inv = !wasPressed && r.dr ? !inv : inv;
 	if (inv) {
 		r.sx = ~r.sx;
@@ -144,4 +212,4 @@ inline gcReport tiltStick(gcReport r) {
 	r.cx = 128;
 	r.cy = 128;
 	return r;
-}
+}*/
