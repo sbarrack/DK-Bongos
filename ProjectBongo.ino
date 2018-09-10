@@ -26,6 +26,19 @@
 //#include "ultradolphin.h"
 #include "revolution.h"
 
+#define SERIAL_9N1 0x84
+#define SERIAL_9E1 0x8E
+#define SERIAL_9O1 0x8F
+#define SERIAL_9N1_RXINV 0x94
+#define SERIAL_9E1_RXINV 0x9E
+#define SERIAL_9O1_RXINV 0x9F
+#define SERIAL_9N1_TXINV 0xA4
+#define SERIAL_9E1_TXINV 0xAE
+#define SERIAL_9O1_TXINV 0xAF
+#define SERIAL_9N1_RXINV_TXINV 0xB4
+#define SERIAL_9E1_RXINV_TXINV 0xBE
+#define SERIAL_9O1_RXINV_TXINV 0xBF
+
 /*//analog values
 #define ANALOG_ERROR	0x00	//The controller disconnects if any analog sensor fails.
 #define ANALOG_MIN		0x01
@@ -60,9 +73,6 @@
 #define button(num, state)	Joystick.button(num, state)
 #define stickC(x, y)	Joystick.Zrotate(x); Joystick.Z(y)
 
-#define USB_MAX 0x3FF
-#define USB_MID	0x200
-#define USB_MIN	0
 #define buttonX	1
 #define buttonB	2
 #define buttonA	3
@@ -73,6 +83,9 @@
 #define buttonR	8
 //#define SELECT	9
 #define START	10
+#define USB_MIN 0
+#define USB_MID	0x200
+#define USB_MAX	0x3FF
 
 GuitarWii gh;
 /*Console gc;
@@ -81,6 +94,8 @@ const double ang1 = atan2(114, -127);
 const double ang2 = atan2(114, 127);
 int wasPressed, inv, wasn;
 
+uint8_t test;
+
 inline void guitarUSBupdate();
 /*inline gcReport jalhalla(gcReport r);
 inline gcReport noTapJump(gcReport r);
@@ -88,22 +103,31 @@ inline gcReport tiltStick(gcReport r);*/
 
 void setup()
 {
-	gh.init();
-	Joystick.useManualSend(true);
+	//gh.init();
+	//Joystick.useManualSend(true);
 	/*gcc = gcDefault;
 	//need to know what order the console sends commands
 	//may be just init and simple poll or init, origin, poll with rumble
 	gc.init(gcc);	//TODO: have different prototypes*/
+	Serial.begin(115200);
+	Serial1.begin(1000000, SERIAL_8N1);
 }
 
 void loop()
 {
-	gh.poll();
+	//gh.poll();
 
-	guitarUSBupdate();
+	//guitarUSBupdate();
 	//TODO: write to report, after testing with gcDefault for connectivity
 
 	//gc.update(gcc);	//TODO: have different prototypes
+	if (Serial1.available()) {
+		test = Serial1.read();
+		if (test < 0x10) {
+			Serial.print("0");
+		}
+		Serial.print(test, HEX);
+	}
 }
 
 inline void guitarUSBupdate() {
