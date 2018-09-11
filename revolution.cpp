@@ -20,6 +20,10 @@
 
 #include "revolution.h"
 
+#ifndef MICROS(us)
+#define MICROS(us)	delayMicroseconds(us)
+#endif // !MICROS(us)
+
 //TODO: It's shifted one byte for some reason, maybe timing, fix it.
 void WiiAttachment::identify() {
 	wire.beginTransmission(CON);
@@ -37,7 +41,6 @@ void WiiAttachment::poll() {
 	wire.write(0);
 	while (wire.endTransmission());
 	MICROS(157);
-	delay(1);
 	wire.requestFrom(CON, 6);
 	wire.readBytes(raw, 6);
 	updateReport();
@@ -93,3 +96,18 @@ void GuitarWii::updateReport() {
 	report.buttons[0] = ~raw[4];
 	report.buttons[1] = ~raw[5];
 }
+
+/*void DrumsWii::updateReport() {
+	report.sx = raw[0];
+	report.sy = raw[1];
+
+	report.velocity[0] = ~raw[2];
+	report.velocity[1] = ~raw[3];
+
+	report.buttons[0] = ~raw[4];
+	report.buttons[1] = ~raw[5];
+}
+
+void TaikoWii::updateReport() {
+	report.buttons = ~raw[0];
+}*/

@@ -3,18 +3,18 @@
 
 	Copyright (C) 2018  Stephen Barrack
 
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
+	This program is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
 
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+	You should have received a copy of the GNU General Public License
+	along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 	For any issues, please contact stephen.barrack12@yahoo.com.
 */
@@ -46,7 +46,7 @@
 #define ANALOG_MID		0x80	//127 is not the center due to the error condition.
 #define TRIGGER_LOW		0x1F
 #define TRIGGER_FLOOR	0x49	//Light-shield is active above this value.
-#define TRIGGER_CEIL	0xFF	//TODO: need to find value just before the trigger button goes high
+#define TRIGGER_CEIL	0xFF	//TODO: need to find value just before the trigger BUTTON goes high
 #define MIC_HIGH		0x6F
 #define MIC_LOW			0x70
 //TODO: double check these values and the adjusted ones
@@ -70,19 +70,20 @@
 #define STICK_MAX_ADJ		105
 #define STICK_MIN_ADJ		-105*/
 
-#define button(num, state)	Joystick.button(num, state)
-#define stickC(x, y)	Joystick.Zrotate(x); Joystick.Z(y)
+#define SOFT_RESET()		(*(volatile uint32_t*)0xE000ED0C) = 0x05FA0004
+#define BUTTON(num, state)	Joystick.button(num, state)
+#define STICK_C(x, y)		Joystick.Zrotate(x); Joystick.Z(y)
 
-#define buttonX	1
-#define buttonB	2
-#define buttonA	3
-#define buttonY	4
-//#define buttonZL	5
-#define buttonZ	6
-#define buttonL	7
-#define buttonR	8
+#define BUTTON_X	1
+#define BUTTON_B	2
+#define BUTTON_A	3
+#define BUTTON_Y	4
+//#define BUTTON_ZL	5
+#define BUTTON_Z	6
+#define BUTTON_L	7
+#define BUTTON_R	8
 //#define SELECT	9
-#define START	10
+#define START		10
 #define USB_MIN 0
 #define USB_MID	0x200
 #define USB_MAX	0x3FF
@@ -131,49 +132,49 @@ void loop()
 }
 
 inline void guitarUSBupdate() {
-	button(buttonZ, gh.report.x);
-	button(buttonA, gh.report.z);
-	button(buttonX, gh.report.y);
-	button(buttonB, gh.report.b);
-	button(buttonR, gh.report.a);
-	button(START, gh.report.start);
-	Joystick.hat(gh.report.select ? 0 : -1);
+	BUTTON(BUTTON_Z, gh.report.x);
+	BUTTON(BUTTON_A, gh.report.z);
+	BUTTON(BUTTON_X, gh.report.y);
+	BUTTON(BUTTON_B, gh.report.b);
+	BUTTON(BUTTON_R, gh.report.a);
+	BUTTON(START, gh.report.select);
+	Joystick.hat(gh.report.start ? 0 : -1);
 	Joystick.sliderRight(gh.report.rt << 5);
 	Joystick.X(gh.report.sx << 4);
 	Joystick.Y(gh.report.sy << 4);
 	switch (gh.report.cy) {
 	case 0x4:
-		stickC(USB_MID, USB_MAX);
+		STICK_C(USB_MID, USB_MAX);
 		break;
 	case 0x7:
-		stickC(USB_MAX, USB_MAX);
+		STICK_C(USB_MAX, USB_MAX);
 		break;
 	case 0xA:
-		stickC(USB_MAX, USB_MID);
+		STICK_C(USB_MAX, USB_MID);
 		break;
 	case 0xC:
 	case 0xD:
-		stickC(USB_MAX, USB_MIN);
+		STICK_C(USB_MAX, USB_MIN);
 		break;
 	case 0x12:
 	case 0x13:
-		stickC(USB_MID, USB_MIN);
+		STICK_C(USB_MID, USB_MIN);
 		break;
 	case 0x14:
 	case 0x15:
-		stickC(USB_MIN, USB_MIN);
+		STICK_C(USB_MIN, USB_MIN);
 		break;
 	case 0x17:
 	case 0x18:
-		stickC(USB_MIN, USB_MID);
+		STICK_C(USB_MIN, USB_MID);
 		break;
 	case 0x1A:
-		stickC(USB_MIN, USB_MAX);
+		STICK_C(USB_MIN, USB_MAX);
 		break;
 	//case 0x1F:
 	//case 0xF:
 	default:
-		stickC(USB_MID, USB_MID);
+		STICK_C(USB_MID, USB_MID);
 		break;
 	}
 	Joystick.send_now();

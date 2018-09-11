@@ -35,18 +35,26 @@
 #pragma once
 #include <i2c_t3.h>
 
-#define CON		0x52
-
-#define MICROS(us) delayMicroseconds(us)
-#define SOFT_RESET() (*(volatile uint32_t*)0xE000ED0C) = 0x05FA0004
+#define CON			0x52
+#define CON_ADDR	0xA4, 0x20
+/*/velocity select
+#define BASS	~B11011
+#define RED		~B11001
+#define YELLOW	~B10001
+#define BLUE	~B01111
+#define ORANGE	~B01110
+#define GREEN	~B10010*/
 
 //wiimote attachment ids
-const uint8_t nunchuck[6] = { 0, 0, 0xA4, 0x20, 0, 0 };
-const uint8_t classic[6] = { 0, 0, 0xA4, 0x20, 1, 1 };		//no handles
-const uint8_t classicPro[6] = { 1, 0, 0xA4, 0x20, 1, 1 };	//handles
-const uint8_t guitar[6] = { 0, 0, 0xA4, 0x20, 1, 3 };
+const uint8_t nunchuck[6] = { 0, 0, CON_ADDR, 0, 0 };
+const uint8_t classic[6] = { 0, 0, CON_ADDR, 1, 1 };	//no handles
+const uint8_t classicPro[6] = { 1, 0, CON_ADDR, 1, 1 };	//handles
+const uint8_t guitar[6] = { 0, 0, CON_ADDR, 1, 3 };
+/*const uint8_t drums[6] = { 1, 0, CON_ADDR, 1, 3 };
+const uint8_t taiko[6] = { 0, 0, CON_ADDR, 1, 0x11 };
+const uint8_t turntable[6] = { 3, 0, CON_ADDR, 1, 3 };*/
 
-//TODO: check for different min timings for F_CPU, add a re-init feature
+//TODO: check for different min timings for F_CPU, add an auto re-init feature
 class WiiAttachment {
 public:
 	uint8_t raw[6];
@@ -98,9 +106,9 @@ struct ClassicControllerReport {
 		struct {
 			uint8_t : 1;
 			uint8_t r : 1;
-			uint8_t start : 1;
-			uint8_t home : 1;
 			uint8_t select : 1;
+			uint8_t home : 1;
+			uint8_t start : 1;
 			uint8_t l : 1;
 			uint8_t dd : 1;
 			uint8_t dr : 1;
@@ -138,9 +146,9 @@ struct GuitarWiiReport {
 		
 		struct {
 			uint8_t : 2;
-			uint8_t start : 1;	//-, Star Power
+			uint8_t select : 1;	//-, Star Power
 			uint8_t : 1;
-			uint8_t select : 1;	//either +
+			uint8_t start : 1;	//either +
 			uint8_t : 1;
 			uint8_t dd : 1;	//strum down
 			uint8_t : 1;
@@ -164,3 +172,75 @@ public:
 protected:
 	void updateReport();
 };
+
+/*struct DrumsWiiReport {
+	uint16_t sx : 6;
+	uint16_t sy : 6;
+
+	union {
+		uint8_t velocity[2];
+
+		struct {
+			uint8_t : 1;
+			uint8_t vSelect : 5;
+			uint8_t hasV : 1;
+			uint8_t l : 1;
+
+			uint8_t : 5;
+			uint8_t v : 3;	//0 = off or nothing, 7 = hardest
+		};
+	};
+
+	union {
+		uint8_t buttons[2];
+
+		struct {
+			uint8_t : 2;
+			uint8_t start : 1;	//+
+			uint8_t : 1;
+			uint8_t select : 1;	//-
+			uint8_t : 3;
+
+			uint8_t : 2;
+			uint8_t r : 1;	//bass pedal
+			uint8_t z : 1;	//blue (4)
+			uint8_t a : 1;	//green (1)
+			uint8_t y : 1;	//yellow (3)
+			uint8_t b : 1;	//red (2)
+			uint8_t x : 1;	//orange (5)
+		};
+	};
+};
+
+class DrumsWii : public WiiAttachment {
+public:
+	DrumsWiiReport report;
+	DrumsWii() : WiiAttachment() {}
+	DrumsWii(int bus, i2c_pins pins) : WiiAttachment(bus, pins) {}
+protected:
+	void updateReport();
+};
+
+struct TaikoWiiReport {
+	union {
+		uint8_t buttons;
+
+		struct {
+			uint8_t : 3;
+			uint8_t x : 1;	//rr
+			uint8_t a : 1;	//cr
+			uint8_t y : 1;	//rl
+			uint8_t b : 1;	//cl
+			uint8_t : 1;
+		};
+	};
+};
+
+class TaikoWii : public WiiAttachment {
+public:
+	TaikoWiiReport report;
+	TaikoWii() : WiiAttachment() {}
+	TaikoWii(int bus, i2c_pins pins) : WiiAttachment(bus, pins) {}
+protected:
+	void updateReport();
+};*/

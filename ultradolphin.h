@@ -74,8 +74,8 @@ union gcReport {
 		uint8_t b : 1;	//bl
 		uint8_t x : 1;	//tr
 		uint8_t y : 1;	//tl
-		uint8_t start : 1;
-		uint8_t getOrigin : 1;	//x+y+start
+		uint8_t select : 1;
+		uint8_t getOrigin : 1;	//x+y+select
 		uint8_t errorLatch : 1;
 		uint8_t errorStatus : 1;
 
@@ -117,7 +117,7 @@ union n64report {
 		uint8_t dl : 1;
 		uint8_t dd : 1;
 		uint8_t du : 1;
-		uint8_t start : 1;
+		uint8_t select : 1;
 		uint8_t z : 1;
 		uint8_t b : 1;
 		uint8_t a : 1;
@@ -129,7 +129,7 @@ union n64report {
 		uint8_t r : 1;
 		uint8_t l : 1;
 		uint8_t : 1;
-				  uint8_t reset : 1;	//l+r+start, start stays low
+				  uint8_t reset : 1;	//l+r+select, select stays low
 
 				  int8_t sx;
 				  int8_t sy;
