@@ -20,46 +20,6 @@
 
 #include "revolution.h"
 
-#ifndef MICROS(us)
-#define MICROS(us)	delayMicroseconds(us)
-#endif // !MICROS(us)
-
-//TODO: It's shifted one byte for some reason, maybe timing, fix it.
-void WiiAttachment::identify() {
-	wire.beginTransmission(CON);
-	wire.write(0xFA);
-	wire.write(0);
-	while (wire.endTransmission());
-	MICROS(36);
-	delay(1);
-	wire.requestFrom(CON, 6);
-	wire.readBytes(id, 6);
-}
-
-void WiiAttachment::poll() {
-	wire.beginTransmission(CON);
-	wire.write(0);
-	while (wire.endTransmission());
-	MICROS(157);
-	wire.requestFrom(CON, 6);
-	wire.readBytes(raw, 6);
-	updateReport();
-}
-
-void WiiAttachment::init() {
-	wire.begin(I2C_MASTER, 0, pins, I2C_PULLUP_EXT, 400000);
-	wire.beginTransmission(CON);
-	wire.write(0xF0);
-	wire.write(0x55);
-	while (wire.endTransmission());
-	wire.beginTransmission(CON);
-	wire.write(0xFB);
-	wire.write(0);
-	while (wire.endTransmission());
-	identify();
-	poll();
-}
-
 void Nunchuck::updateReport() {
 	report.sx = raw[0];
 	report.sy = raw[1];

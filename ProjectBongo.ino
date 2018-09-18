@@ -23,21 +23,8 @@
 	one sick controller! <3
 */
 
-//#include "ultradolphin.h"
 #include "revolution.h"
-
-#define SERIAL_9N1 0x84
-#define SERIAL_9E1 0x8E
-#define SERIAL_9O1 0x8F
-#define SERIAL_9N1_RXINV 0x94
-#define SERIAL_9E1_RXINV 0x9E
-#define SERIAL_9O1_RXINV 0x9F
-#define SERIAL_9N1_TXINV 0xA4
-#define SERIAL_9E1_TXINV 0xAE
-#define SERIAL_9O1_TXINV 0xAF
-#define SERIAL_9N1_RXINV_TXINV 0xB4
-#define SERIAL_9E1_RXINV_TXINV 0xBE
-#define SERIAL_9O1_RXINV_TXINV 0xBF
+#include "leds.h"
 
 /*//analog values
 #define ANALOG_ERROR	0x00	//The controller disconnects if any analog sensor fails.
@@ -89,13 +76,11 @@
 #define USB_MAX	0x3FF
 
 GuitarWii gh;
-/*Console gc;
-gcData gcc;*/
+LightString leds;
+
 const double ang1 = atan2(114, -127);
 const double ang2 = atan2(114, 127);
 int wasPressed, inv, wasn;
-
-uint8_t test;
 
 inline void guitarUSBupdate();
 /*inline gcReport jalhalla(gcReport r);
@@ -105,30 +90,17 @@ inline gcReport tiltStick(gcReport r);*/
 void setup()
 {
 	//gh.init();
+	leds.init();
 	//Joystick.useManualSend(true);
-	/*gcc = gcDefault;
-	//need to know what order the console sends commands
-	//may be just init and simple poll or init, origin, poll with rumble
-	gc.init(gcc);	//TODO: have different prototypes*/
-	Serial.begin(115200);
-	Serial1.begin(1000000, SERIAL_8N1);
+
 }
 
 void loop()
 {
 	//gh.poll();
-
+	leds.idle();
 	//guitarUSBupdate();
-	//TODO: write to report, after testing with gcDefault for connectivity
 
-	//gc.update(gcc);	//TODO: have different prototypes
-	if (Serial1.available()) {
-		test = Serial1.read();
-		if (test < 0x10) {
-			Serial.print("0");
-		}
-		Serial.print(test, HEX);
-	}
 }
 
 inline void guitarUSBupdate() {

@@ -24,7 +24,7 @@
 	[1] http://wiibrew.org/wiki/Wiimote/Extension_Controllers
 	[2] https://en.wikipedia.org/wiki/I%C2%B2C
 	
-	Controllers: Nunchuck, Classic Controller (Pro), Guitar
+	Controllers: Nunchuck, Classic Controller (and Pro version), Guitar
 	Arduinos: Teensy 3.5 120MHz
 	
 	The Wii Motion Plus is a useable device and does poll properly, but I
@@ -34,6 +34,8 @@
 
 #pragma once
 #include <i2c_t3.h>
+
+#define MICROS(us)	delayMicroseconds(us)
 
 #define CON			0x52
 #define CON_ADDR	0xA4, 0x20
@@ -61,9 +63,49 @@ public:
 	uint8_t id[6];
 	WiiAttachment() : wire(i2c_t3(0)), pins(I2C_PINS_16_17) {}
 	WiiAttachment(int bus, i2c_pins pins) : wire(i2c_t3(bus)), pins(pins) {}
-	void identify();
-	void poll();
-	void init();	//starts attachment unencrypted
+	//TODO: It's shifted one byte for some reason, maybe timing, fix it.
+	inline void identify() {
+		cli();
+		wire.beginTransmission(CON);
+		wire.write(0xFA);
+		wire.write(0);
+		while (wire.endTransmission());
+		MICROS(36);
+		delay(1);
+		wire.requestFrom(CON, 6);
+		wire.readBytes(id, 6);
+		sei();
+	}
+
+	inline void poll() {
+		cli();
+		wire.beginTransmission(CON);
+		wire.write(0);
+		while (wire.endTransmission());
+		MICROS(157);
+		wire.requestFrom(CON, 6);
+		wire.readBytes(raw, 6);
+		updateReport();
+		sei();
+	}
+
+	//starts attachment unencrypted
+	inline void init() {
+		cli();
+		wire.begin(I2C_MASTER, 0, pins, I2C_PULLUP_EXT, 400000);
+		wire.beginTransmission(CON);
+		wire.write(0xF0);
+		wire.write(0x55);
+		while (wire.endTransmission());
+		wire.beginTransmission(CON);
+		wire.write(0xFB);
+		wire.write(0);
+		while (wire.endTransmission());
+		sei();
+		identify();
+		poll();
+	}
+
 protected:
 	i2c_t3 wire;
 	i2c_pins pins;

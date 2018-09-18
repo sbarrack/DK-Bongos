@@ -45,7 +45,7 @@
 
 /*#define CLEAR_BIT	"str %2, [%1, 8] \n"
 #define SET_BIT		"str %2, [%1, 4] \n"
-#define GET_BIT		"ldr r0, [%1, 16] \n" "str r0, [%0] \n" "add %0, %0, 4 \n"*/
+#define GET_BIT		"ldr RED_0, [%1, 16] \n" "str RED_0, [%0] \n" "add %0, %0, 4 \n"*/
 
 union status {
 	uint8_t raw[3];
