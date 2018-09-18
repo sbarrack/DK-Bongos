@@ -57,30 +57,14 @@
 #define STICK_MAX_ADJ		105
 #define STICK_MIN_ADJ		-105*/
 
-#define SOFT_RESET()		(*(volatile uint32_t*)0xE000ED0C) = 0x05FA0004
-#define BUTTON(num, state)	Joystick.button(num, state)
-#define STICK_C(x, y)		Joystick.Zrotate(x); Joystick.Z(y)
-
-#define BUTTON_X	1
-#define BUTTON_B	2
-#define BUTTON_A	3
-#define BUTTON_Y	4
-//#define BUTTON_ZL	5
-#define BUTTON_Z	6
-#define BUTTON_L	7
-#define BUTTON_R	8
-//#define SELECT	9
-#define START		10
-#define USB_MIN 0
-#define USB_MID	0x200
-#define USB_MAX	0x3FF
+#define SOFT_RESET()	(*(volatile uint32_t*)0xE000ED0C) = 0x05FA0004
 
 GuitarWii gh;
 LightString leds;
 
-const double ang1 = atan2(114, -127);
+/*const double ang1 = atan2(114, -127);
 const double ang2 = atan2(114, 127);
-int wasPressed, inv, wasn;
+int wasPressed, inv, wasn;*/
 
 inline void guitarUSBupdate();
 /*inline gcReport jalhalla(gcReport r);
@@ -89,66 +73,32 @@ inline gcReport tiltStick(gcReport r);*/
 
 void setup()
 {
-	//gh.init();
+	gh.init();
+	Joystick.useManualSend(true);
 	leds.init();
-	//Joystick.useManualSend(true);
 
 }
 
 void loop()
 {
-	//gh.poll();
+	gh.poll();
+	guitarUSBupdate();
 	leds.idle();
-	//guitarUSBupdate();
 
 }
 
 inline void guitarUSBupdate() {
-	BUTTON(BUTTON_Z, gh.report.x);
-	BUTTON(BUTTON_A, gh.report.z);
-	BUTTON(BUTTON_X, gh.report.y);
-	BUTTON(BUTTON_B, gh.report.b);
-	BUTTON(BUTTON_R, gh.report.a);
-	BUTTON(START, gh.report.select);
-	Joystick.hat(gh.report.start ? 0 : -1);
-	Joystick.sliderRight(gh.report.rt << 5);
+	Joystick.button(3, gh.report.a);
+	Joystick.button(2, gh.report.b);
+	Joystick.button(4, gh.report.y);
+	Joystick.button(1, gh.report.x);
+	Joystick.button(6, gh.report.z);
+	Joystick.button(10, gh.report.start);
+	Joystick.button(9, gh.report.select);
 	Joystick.X(gh.report.sx << 4);
 	Joystick.Y(gh.report.sy << 4);
-	switch (gh.report.cy) {
-	case 0x4:
-		STICK_C(USB_MID, USB_MAX);
-		break;
-	case 0x7:
-		STICK_C(USB_MAX, USB_MAX);
-		break;
-	case 0xA:
-		STICK_C(USB_MAX, USB_MID);
-		break;
-	case 0xC:
-	case 0xD:
-		STICK_C(USB_MAX, USB_MIN);
-		break;
-	case 0x12:
-	case 0x13:
-		STICK_C(USB_MID, USB_MIN);
-		break;
-	case 0x14:
-	case 0x15:
-		STICK_C(USB_MIN, USB_MIN);
-		break;
-	case 0x17:
-	case 0x18:
-		STICK_C(USB_MIN, USB_MID);
-		break;
-	case 0x1A:
-		STICK_C(USB_MIN, USB_MAX);
-		break;
-	//case 0x1F:
-	//case 0xF:
-	default:
-		STICK_C(USB_MID, USB_MID);
-		break;
-	}
+	Joystick.sliderRight(gh.report.rt << 5);
+	Joystick.sliderLeft(gh.report.cy << 5);
 	Joystick.send_now();
 }
 

@@ -1,4 +1,4 @@
-/*	wii.cpp communicates with Wii Remote Attachments and stores input data.
+/*	wii.cpp stores input data from the guitar.
 
 	Copyright (C) 2018  Stephen Barrack
 
@@ -46,7 +46,7 @@ void ClassicController::updateReport() {
 }
 
 void GuitarWii::updateReport() {
-	//the stick is inverted for left-hand
+	//inverted for left-hand, do somewhere else
 	report.sx = ~raw[0];
 	report.sy = ~raw[1];
 

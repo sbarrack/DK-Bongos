@@ -1,4 +1,4 @@
-/*	wii.h is the interface for Wii Remote Attachments.
+/*	wii.h is the interface for Wii Remote Attachments and polls the guitar.
 
 	Copyright (C) 2018  Stephen Barrack
 
@@ -19,17 +19,17 @@
 */
 
 /*	Wii Remote attachments [1] use a 2-wire Interface (TWI/I2C) [2] which
-	is supported by Teensy.
+	is supported by Teensy [3].
 
 	[1] http://wiibrew.org/wiki/Wiimote/Extension_Controllers
 	[2] https://en.wikipedia.org/wiki/I%C2%B2C
+	[3] https://forum.pjrc.com/threads/21680-New-I2C-library-for-Teensy3
 	
 	Controllers: Nunchuck, Classic Controller (and Pro version), Guitar
-	Arduinos: Teensy 3.5 120MHz
+	Arduinos: Teensy (LC, 3.x) > 8 MHz
 	
 	The Wii Motion Plus is a useable device and does poll properly, but I
-	removed support for it since it needs to be attached to the Wii Remote
-	to swing it around.
+	removed support for it since it's useless.
 */
 
 #pragma once
@@ -37,8 +37,7 @@
 
 #define MICROS(us)	delayMicroseconds(us)
 
-#define CON			0x52
-#define CON_ADDR	0xA4, 0x20
+#define CON	0x52
 /*/velocity select
 #define BASS	~B11011
 #define RED		~B11001
@@ -48,10 +47,10 @@
 #define GREEN	~B10010*/
 
 //wiimote attachment ids
-const uint8_t nunchuck[6] = { 0, 0, CON_ADDR, 0, 0 };
-const uint8_t classic[6] = { 0, 0, CON_ADDR, 1, 1 };	//no handles
-const uint8_t classicPro[6] = { 1, 0, CON_ADDR, 1, 1 };	//handles
-const uint8_t guitar[6] = { 0, 0, CON_ADDR, 1, 3 };
+const uint8_t nunchuck[6] = { 0, 0, 0xA4, 0x20, 0, 0 };
+const uint8_t classic[6] = { 0, 0, 0xA4, 0x20, 1, 1 };		//no handles
+const uint8_t classicPro[6] = { 1, 0, 0xA4, 0x20, 1, 1 };	//handles
+const uint8_t guitar[6] = { 0, 0, 0xA4, 0x20, 1, 3 };
 /*const uint8_t drums[6] = { 1, 0, CON_ADDR, 1, 3 };
 const uint8_t taiko[6] = { 0, 0, CON_ADDR, 1, 0x11 };
 const uint8_t turntable[6] = { 3, 0, CON_ADDR, 1, 3 };*/
@@ -63,6 +62,7 @@ public:
 	uint8_t id[6];
 	WiiAttachment() : wire(i2c_t3(0)), pins(I2C_PINS_16_17) {}
 	WiiAttachment(int bus, i2c_pins pins) : wire(i2c_t3(bus)), pins(pins) {}
+
 	//TODO: It's shifted one byte for some reason, maybe timing, fix it.
 	inline void identify() {
 		cli();
@@ -89,7 +89,6 @@ public:
 		sei();
 	}
 
-	//starts attachment unencrypted
 	inline void init() {
 		cli();
 		wire.begin(I2C_MASTER, 0, pins, I2C_PULLUP_EXT, 400000);
