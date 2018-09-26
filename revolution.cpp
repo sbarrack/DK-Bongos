@@ -55,18 +55,3 @@ void GuitarWii::updateReport() {
 	report.buttons[0] = ~raw[4];
 	report.buttons[1] = ~raw[5];
 }
-
-/*void DrumsWii::updateReport() {
-	report.sx = raw[0];
-	report.sy = raw[1];
-
-	report.velocity[0] = ~raw[2];
-	report.velocity[1] = ~raw[3];
-
-	report.buttons[0] = ~raw[4];
-	report.buttons[1] = ~raw[5];
-}
-
-void TaikoWii::updateReport() {
-	report.buttons = ~raw[0];
-}*/
