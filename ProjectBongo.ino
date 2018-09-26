@@ -24,6 +24,7 @@
 */
 
 #include "revolution.h"
+#include "leds.h"
 
 /*//analog values
 #define ANALOG_ERROR	0x00	//The controller disconnects if any analog sensor fails.
@@ -58,7 +59,10 @@
 
 #define SOFT_RESET()	(*(volatile uint32_t*)0xE000ED0C) = 0x05FA0004
 
+#define PERIOD	20
+
 GuitarWii gh;
+LightString strand;
 
 /*const double ang1 = atan2(114, -127);
 const double ang2 = atan2(114, 127);
@@ -71,15 +75,18 @@ inline gcReport tiltStick(gcReport r);*/
 
 void setup()
 {
-	gh.init();
-	Joystick.useManualSend(true);
+	//gh.init();
+	//Joystick.useManualSend(true);
+	strand.init();
 
 }
 
 void loop()
 {
-	gh.poll();
-	guitarUSBupdate();
+	//gh.poll();
+	//guitarUSBupdate();
+	ledsNormal();
+	delay(PERIOD);
 
 }
 
@@ -97,6 +104,16 @@ inline void guitarUSBupdate() {
 	Joystick.sliderRight(gh.report.rt << 5);
 	Joystick.sliderLeft(gh.report.cy << 5);
 	Joystick.send_now();
+}
+
+inline void ledsNormal() {
+	strand.cycleAll();
+	strand.leds.setPixel(0, gh.report.zl ? 0 : strand.orange);
+	strand.leds.setPixel(1, gh.report.y ? 0 : strand.blue);
+	strand.leds.setPixel(2, gh.report.x ? 0 : strand.yellow);
+	strand.leds.setPixel(3, gh.report.b ? 0 : strand.red);
+	strand.leds.setPixel(4, gh.report.a ? 0 : strand.green);
+	strand.leds.show();
 }
 
 /*inline gcReport jalhalla(gcReport r) {
