@@ -187,20 +187,20 @@ struct GuitarWiiReport {
 		
 		struct {
 			uint8_t : 2;
-			uint8_t select : 1;	//-, Star Power
+			uint8_t select : 1;	// either +
 			uint8_t : 1;
-			uint8_t start : 1;	//either +
+			uint8_t start : 1;	// Star Power
 			uint8_t : 1;
-			uint8_t dd : 1;	//strum down
+			uint8_t dd : 1;	// strum down
 			uint8_t : 1;
 					  
-			uint8_t du : 1;	//strum up
+			uint8_t du : 1;	// strum up
 			uint8_t : 2;
-			uint8_t y : 1;	//yellow (3)
-			uint8_t a : 1;	//green (1)
-			uint8_t z : 1;	//blue (4)
-			uint8_t b : 1;	//red (2)
-			uint8_t x : 1;	//orange (5)
+			uint8_t x : 1;	// yellow (3)
+			uint8_t a : 1;	// green (1)
+			uint8_t y : 1;	// blue (4)
+			uint8_t b : 1;	// red (2)
+			uint8_t zl : 1;	// orange (5)
 		};
 	};
 };

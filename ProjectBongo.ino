@@ -24,7 +24,6 @@
 */
 
 #include "revolution.h"
-#include "leds.h"
 
 /*//analog values
 #define ANALOG_ERROR	0x00	//The controller disconnects if any analog sensor fails.
@@ -60,7 +59,6 @@
 #define SOFT_RESET()	(*(volatile uint32_t*)0xE000ED0C) = 0x05FA0004
 
 GuitarWii gh;
-LightString leds;
 
 /*const double ang1 = atan2(114, -127);
 const double ang2 = atan2(114, 127);
@@ -75,7 +73,6 @@ void setup()
 {
 	gh.init();
 	Joystick.useManualSend(true);
-	leds.init();
 
 }
 
@@ -83,7 +80,6 @@ void loop()
 {
 	gh.poll();
 	guitarUSBupdate();
-	leds.idle();
 
 }
 
@@ -92,9 +88,10 @@ inline void guitarUSBupdate() {
 	Joystick.button(2, gh.report.b);
 	Joystick.button(4, gh.report.y);
 	Joystick.button(1, gh.report.x);
-	Joystick.button(6, gh.report.z);
+	Joystick.button(6, gh.report.zl);
 	Joystick.button(10, gh.report.start);
 	Joystick.button(9, gh.report.select);
+	Joystick.hat(gh.report.du ? 0 : gh.report.dd ? 180 : -1);
 	Joystick.X(gh.report.sx << 4);
 	Joystick.Y(gh.report.sy << 4);
 	Joystick.sliderRight(gh.report.rt << 5);

@@ -46,9 +46,8 @@ void ClassicController::updateReport() {
 }
 
 void GuitarWii::updateReport() {
-	//inverted for left-hand, do somewhere else
-	report.sx = ~raw[0];
-	report.sy = ~raw[1];
+	report.sx = raw[0];
+	report.sy = raw[1];
 
 	report.cy = raw[2];
 	report.rt = raw[3];
