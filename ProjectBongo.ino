@@ -1,30 +1,5 @@
-/*	This is the Guitar branch of ProjectBongo; a program dedicated to the
-	functionality of the Guitar Hero/Rock Band Guitars for Wii.
-
-	Copyright (C) 2018  Stephen Barrack
-
-	This program is free software: you can redistribute it and/or modify
-	it under the terms of the GNU General Public License as published by
-	the Free Software Foundation, either version 3 of the License, or
-	(at your option) any later version.
-
-	This program is distributed in the hope that it will be useful,
-	but WITHOUT ANY WARRANTY; without even the implied warranty of
-	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-	GNU General Public License for more details.
-
-	You should have received a copy of the GNU General Public License
-	along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
-	For any issues, please contact stephen.barrack12@yahoo.com.
-*/
-
-/*	Special thanks to KEMAN for working with me on making
-	one sick controller! <3
-*/
-
+// Special thanks to KEMAN for working with me on the guitar controller!
 #include "revolution.h"
-#include "leds.h"
 
 /*//analog values
 #define ANALOG_ERROR	0x00	//The controller disconnects if any analog sensor fails.
@@ -57,120 +32,438 @@
 #define STICK_MAX_ADJ		105
 #define STICK_MIN_ADJ		-105*/
 
+#define VOLUME	63
+#define CHANNEL	1
+#define DELAY	2000
+
 #define SOFT_RESET()	(*(volatile uint32_t*)0xE000ED0C) = 0x05FA0004
 
-#define PERIOD	20
-
 GuitarWii gh;
-LightString strand;
 
-/*const double ang1 = atan2(114, -127);
-const double ang2 = atan2(114, 127);
-int wasPressed, inv, wasn;*/
-
-inline void guitarUSBupdate();
-/*inline gcReport jalhalla(gcReport r);
-inline gcReport noTapJump(gcReport r);
-inline gcReport tiltStick(gcReport r);*/
-
-void setup()
-{
-	//gh.init();
-	//Joystick.useManualSend(true);
-	strand.init();
+void setup() {
+	//Serial.begin(115200);
+	//while (!Serial);
+	Joystick.useManualSend(true);
+	gh.init();
 
 }
 
-void loop()
-{
-	//gh.poll();
-	//guitarUSBupdate();
-	ledsNormal();
-	delay(PERIOD);
+void loop() {
+	gh.poll();
+	gh.sendJoyUSB();
 
 }
 
-inline void guitarUSBupdate() {
-	Joystick.button(3, gh.report.a);
-	Joystick.button(2, gh.report.b);
-	Joystick.button(4, gh.report.y);
-	Joystick.button(1, gh.report.x);
-	Joystick.button(6, gh.report.zl);
-	Joystick.button(10, gh.report.start);
-	Joystick.button(9, gh.report.select);
-	Joystick.hat(gh.report.du ? 0 : gh.report.dd ? 180 : -1);
-	Joystick.X(gh.report.sx << 4);
-	Joystick.Y(gh.report.sy << 4);
-	Joystick.sliderRight(gh.report.rt << 5);
-	Joystick.sliderLeft(gh.report.cy << 5);
-	Joystick.send_now();
-}
-
-inline void ledsNormal() {
-	strand.cycleAll();
-	strand.leds.setPixel(0, gh.report.zl ? 0 : strand.orange);
-	strand.leds.setPixel(1, gh.report.y ? 0 : strand.blue);
-	strand.leds.setPixel(2, gh.report.x ? 0 : strand.yellow);
-	strand.leds.setPixel(3, gh.report.b ? 0 : strand.red);
-	strand.leds.setPixel(4, gh.report.a ? 0 : strand.green);
-	strand.leds.show();
-}
-
-/*inline gcReport jalhalla(gcReport r) {
-	inv = !wasPressed && r.dr ? !inv : inv;
-	if (inv) {
-		r.sx = ~r.sx;
-		r.sy = ~r.sy;
+/*void guitarMIDI() {
+	if (gh.report.dd) {
+		switch ((gh.report.buttons[1] & B11101000) >> 3)
+		{
+		case 0:	//A11/E, EADGBE
+			usbMIDI.sendNoteOn(64, VOLUME, CHANNEL);
+			usbMIDI.send_now();
+			delayMicros(DELAY);
+			usbMIDI.sendNoteOn(69, VOLUME, CHANNEL);
+			usbMIDI.send_now();
+			delayMicros(DELAY);
+			usbMIDI.sendNoteOn(74, VOLUME, CHANNEL);
+			usbMIDI.send_now();
+			delayMicros(DELAY);
+			usbMIDI.sendNoteOn(79, VOLUME, CHANNEL);
+			usbMIDI.send_now();
+			delayMicros(DELAY);
+			usbMIDI.sendNoteOn(83, VOLUME, CHANNEL);
+			usbMIDI.send_now();
+			delayMicros(DELAY);
+			usbMIDI.sendNoteOn(88, VOLUME, CHANNEL);
+			break;
+		case B10000:	//D, XXDADF#
+			usbMIDI.sendNoteOn(62, VOLUME, CHANNEL);
+			usbMIDI.send_now();
+			delayMicros(DELAY);
+			usbMIDI.sendNoteOn(69, VOLUME, CHANNEL);
+			usbMIDI.send_now();
+			delayMicros(DELAY);
+			usbMIDI.sendNoteOn(74, VOLUME, CHANNEL);
+			usbMIDI.send_now();
+			delayMicros(DELAY);
+			usbMIDI.sendNoteOn(78, VOLUME, CHANNEL);
+			break;
+		case B11000:	//F#m, F#C#F#AC#F#
+			usbMIDI.sendNoteOn(69, VOLUME, CHANNEL);
+			usbMIDI.send_now();
+			delayMicros(DELAY);
+			usbMIDI.sendNoteOn(73, VOLUME, CHANNEL);
+			usbMIDI.send_now();
+			delayMicros(DELAY);
+			usbMIDI.sendNoteOn(78, VOLUME, CHANNEL);
+			usbMIDI.send_now();
+			delayMicros(DELAY);
+			usbMIDI.sendNoteOn(81, VOLUME, CHANNEL);
+			usbMIDI.send_now();
+			delayMicros(DELAY);
+			usbMIDI.sendNoteOn(85, VOLUME, CHANNEL);
+			usbMIDI.send_now();
+			delayMicros(DELAY);
+			usbMIDI.sendNoteOn(90, VOLUME, CHANNEL);
+			break;
+		case B00100:	//G, GBDGBG
+			usbMIDI.sendNoteOn(67, VOLUME, CHANNEL);
+			usbMIDI.send_now();
+			delayMicros(DELAY);
+			usbMIDI.sendNoteOn(71, VOLUME, CHANNEL);
+			usbMIDI.send_now();
+			delayMicros(DELAY);
+			usbMIDI.sendNoteOn(74, VOLUME, CHANNEL);
+			usbMIDI.send_now();
+			delayMicros(DELAY);
+			usbMIDI.sendNoteOn(79, VOLUME, CHANNEL);
+			usbMIDI.send_now();
+			delayMicros(DELAY);
+			usbMIDI.sendNoteOn(83, VOLUME, CHANNEL);
+			usbMIDI.send_now();
+			delayMicros(DELAY);
+			usbMIDI.sendNoteOn(91, VOLUME, CHANNEL);
+			break;
+		case B00101:	//A, XAEAC#E
+			usbMIDI.sendNoteOn(69, VOLUME, CHANNEL);
+			usbMIDI.send_now();
+			delayMicros(DELAY);
+			usbMIDI.sendNoteOn(76, VOLUME, CHANNEL);
+			usbMIDI.send_now();
+			delayMicros(DELAY);
+			usbMIDI.sendNoteOn(81, VOLUME, CHANNEL);
+			usbMIDI.send_now();
+			delayMicros(DELAY);
+			usbMIDI.sendNoteOn(85, VOLUME, CHANNEL);
+			usbMIDI.send_now();
+			delayMicros(DELAY);
+			usbMIDI.sendNoteOn(88, VOLUME, CHANNEL);
+			break;
+		case B01000:	//Bm, XBF#BDF#
+			usbMIDI.sendNoteOn(71, VOLUME, CHANNEL);
+			usbMIDI.send_now();
+			delayMicros(DELAY);
+			usbMIDI.sendNoteOn(78, VOLUME, CHANNEL);
+			usbMIDI.send_now();
+			delayMicros(DELAY);
+			usbMIDI.sendNoteOn(83, VOLUME, CHANNEL);
+			usbMIDI.send_now();
+			delayMicros(DELAY);
+			usbMIDI.sendNoteOn(86, VOLUME, CHANNEL);
+			usbMIDI.send_now();
+			delayMicros(DELAY);
+			usbMIDI.sendNoteOn(90, VOLUME, CHANNEL);
+			break;
+		case B10100:	//C, XCEGCE
+			usbMIDI.sendNoteOn(60, VOLUME, CHANNEL);
+			usbMIDI.send_now();
+			delayMicros(DELAY);
+			usbMIDI.sendNoteOn(64, VOLUME, CHANNEL);
+			usbMIDI.send_now();
+			delayMicros(DELAY);
+			usbMIDI.sendNoteOn(67, VOLUME, CHANNEL);
+			usbMIDI.send_now();
+			delayMicros(DELAY);
+			usbMIDI.sendNoteOn(72, VOLUME, CHANNEL);
+			usbMIDI.send_now();
+			delayMicros(DELAY);
+			usbMIDI.sendNoteOn(76, VOLUME, CHANNEL);
+			break;
+		case B00001:	//Am, XAEACE
+			usbMIDI.sendNoteOn(69, VOLUME, CHANNEL);
+			usbMIDI.send_now();
+			delayMicros(DELAY);
+			usbMIDI.sendNoteOn(76, VOLUME, CHANNEL);
+			usbMIDI.send_now();
+			delayMicros(DELAY);
+			usbMIDI.sendNoteOn(81, VOLUME, CHANNEL);
+			usbMIDI.send_now();
+			delayMicros(DELAY);
+			usbMIDI.sendNoteOn(84, VOLUME, CHANNEL);
+			usbMIDI.send_now();
+			delayMicros(DELAY);
+			usbMIDI.sendNoteOn(88, VOLUME, CHANNEL);
+			break;
+		case B01100:	//C#m, XDADFA
+			usbMIDI.sendNoteOn(62, VOLUME, CHANNEL);
+			usbMIDI.send_now();
+			delayMicros(DELAY);
+			usbMIDI.sendNoteOn(69, VOLUME, CHANNEL);
+			usbMIDI.send_now();
+			delayMicros(DELAY);
+			usbMIDI.sendNoteOn(74, VOLUME, CHANNEL);
+			usbMIDI.send_now();
+			delayMicros(DELAY);
+			usbMIDI.sendNoteOn(77, VOLUME, CHANNEL);
+			usbMIDI.send_now();
+			delayMicros(DELAY);
+			usbMIDI.sendNoteOn(81, VOLUME, CHANNEL);
+			break;
+		case B01101:	//E, EBEG#BE
+			usbMIDI.sendNoteOn(64, VOLUME, CHANNEL);
+			usbMIDI.send_now();
+			delayMicros(DELAY);
+			usbMIDI.sendNoteOn(71, VOLUME, CHANNEL);
+			usbMIDI.send_now();
+			delayMicros(DELAY);
+			usbMIDI.sendNoteOn(76, VOLUME, CHANNEL);
+			usbMIDI.send_now();
+			delayMicros(DELAY);
+			usbMIDI.sendNoteOn(80, VOLUME, CHANNEL);
+			usbMIDI.send_now();
+			delayMicros(DELAY);
+			usbMIDI.sendNoteOn(83, VOLUME, CHANNEL);
+			usbMIDI.send_now();
+			delayMicros(DELAY);
+			usbMIDI.sendNoteOn(88, VOLUME, CHANNEL);
+			break;
+		case B01001:	//Em, EBEGBE
+			usbMIDI.sendNoteOn(64, VOLUME, CHANNEL);
+			usbMIDI.send_now();
+			delayMicros(DELAY);
+			usbMIDI.sendNoteOn(71, VOLUME, CHANNEL);
+			usbMIDI.send_now();
+			delayMicros(DELAY);
+			usbMIDI.sendNoteOn(76, VOLUME, CHANNEL);
+			usbMIDI.send_now();
+			delayMicros(DELAY);
+			usbMIDI.sendNoteOn(79, VOLUME, CHANNEL);
+			usbMIDI.send_now();
+			delayMicros(DELAY);
+			usbMIDI.sendNoteOn(83, VOLUME, CHANNEL);
+			usbMIDI.send_now();
+			delayMicros(DELAY);
+			usbMIDI.sendNoteOn(88, VOLUME, CHANNEL);
+			break;
+		case B10001:	//Cm, XC#G#C#EG#
+			usbMIDI.sendNoteOn(61, VOLUME, CHANNEL);
+			usbMIDI.send_now();
+			delayMicros(DELAY);
+			usbMIDI.sendNoteOn(68, VOLUME, CHANNEL);
+			usbMIDI.send_now();
+			delayMicros(DELAY);
+			usbMIDI.sendNoteOn(73, VOLUME, CHANNEL);
+			usbMIDI.send_now();
+			delayMicros(DELAY);
+			usbMIDI.sendNoteOn(76, VOLUME, CHANNEL);
+			usbMIDI.send_now();
+			delayMicros(DELAY);
+			usbMIDI.sendNoteOn(80, VOLUME, CHANNEL);
+			break;
+		default:
+			break;
+		}
+		usbMIDI.send_now();
 	}
-	wasPressed = r.dr;
-	return r;
-}
-
-inline gcReport noTapJump(gcReport r) {
-	int y = r.sy - 127;
-	if (!(r.x || r.y) && y > 53) {
-		int x = r.sx - 127;
-		double angle = atan2(y, x);
-		if (angle > ang2 && angle < ang1) {
-			r.sx = 53 * x / y + 127;
-			r.sy = 180;
+	else if (gh.report.du) {
+		switch ((gh.report.buttons[1] & B11101000) >> 3)
+		{
+		case 0:	//A11/E, EADGBE
+			usbMIDI.sendNoteOn(88, VOLUME, CHANNEL);
+			usbMIDI.send_now();
+			delayMicros(DELAY);
+			usbMIDI.sendNoteOn(83, VOLUME, CHANNEL);
+			usbMIDI.send_now();
+			delayMicros(DELAY);
+			usbMIDI.sendNoteOn(79, VOLUME, CHANNEL);
+			usbMIDI.send_now();
+			delayMicros(DELAY);
+			usbMIDI.sendNoteOn(74, VOLUME, CHANNEL);
+			usbMIDI.send_now();
+			delayMicros(DELAY);
+			usbMIDI.sendNoteOn(69, VOLUME, CHANNEL);
+			usbMIDI.send_now();
+			delayMicros(DELAY);
+			usbMIDI.sendNoteOn(64, VOLUME, CHANNEL);
+			break;
+		case B10000:	//D, XXDADF#
+			usbMIDI.sendNoteOn(78, VOLUME, CHANNEL);
+			usbMIDI.send_now();
+			delayMicros(DELAY);
+			usbMIDI.sendNoteOn(74, VOLUME, CHANNEL);
+			usbMIDI.send_now();
+			delayMicros(DELAY);
+			usbMIDI.sendNoteOn(69, VOLUME, CHANNEL);
+			usbMIDI.send_now();
+			delayMicros(DELAY);
+			usbMIDI.sendNoteOn(62, VOLUME, CHANNEL);
+			break;
+		case B11000:	//F#m, F#C#F#AC#F#
+			usbMIDI.sendNoteOn(90, VOLUME, CHANNEL);
+			usbMIDI.send_now();
+			delayMicros(DELAY);
+			usbMIDI.sendNoteOn(85, VOLUME, CHANNEL);
+			usbMIDI.send_now();
+			delayMicros(DELAY);
+			usbMIDI.sendNoteOn(81, VOLUME, CHANNEL);
+			usbMIDI.send_now();
+			delayMicros(DELAY);
+			usbMIDI.sendNoteOn(78, VOLUME, CHANNEL);
+			usbMIDI.send_now();
+			delayMicros(DELAY);
+			usbMIDI.sendNoteOn(73, VOLUME, CHANNEL);
+			usbMIDI.send_now();
+			delayMicros(DELAY);
+			usbMIDI.sendNoteOn(69, VOLUME, CHANNEL);
+			break;
+		case B00100:	//G, GBDGBG
+			usbMIDI.sendNoteOn(91, VOLUME, CHANNEL);
+			usbMIDI.send_now();
+			delayMicros(DELAY);
+			usbMIDI.sendNoteOn(83, VOLUME, CHANNEL);
+			usbMIDI.send_now();
+			delayMicros(DELAY);
+			usbMIDI.sendNoteOn(79, VOLUME, CHANNEL);
+			usbMIDI.send_now();
+			delayMicros(DELAY);
+			usbMIDI.sendNoteOn(74, VOLUME, CHANNEL);
+			usbMIDI.send_now();
+			delayMicros(DELAY);
+			usbMIDI.sendNoteOn(71, VOLUME, CHANNEL);
+			usbMIDI.send_now();
+			delayMicros(DELAY);
+			usbMIDI.sendNoteOn(67, VOLUME, CHANNEL);
+			break;
+		case B00101:	//A, XAEAC#E
+			usbMIDI.sendNoteOn(88, VOLUME, CHANNEL);
+			usbMIDI.send_now();
+			delayMicros(DELAY);
+			usbMIDI.sendNoteOn(85, VOLUME, CHANNEL);
+			usbMIDI.send_now();
+			delayMicros(DELAY);
+			usbMIDI.sendNoteOn(81, VOLUME, CHANNEL);
+			usbMIDI.send_now();
+			delayMicros(DELAY);
+			usbMIDI.sendNoteOn(76, VOLUME, CHANNEL);
+			usbMIDI.send_now();
+			delayMicros(DELAY);
+			usbMIDI.sendNoteOn(69, VOLUME, CHANNEL);
+			break;
+		case B01000:	//Bm, XBF#BDF#
+			usbMIDI.sendNoteOn(90, VOLUME, CHANNEL);
+			usbMIDI.send_now();
+			delayMicros(DELAY);
+			usbMIDI.sendNoteOn(86, VOLUME, CHANNEL);
+			usbMIDI.send_now();
+			delayMicros(DELAY);
+			usbMIDI.sendNoteOn(83, VOLUME, CHANNEL);
+			usbMIDI.send_now();
+			delayMicros(DELAY);
+			usbMIDI.sendNoteOn(78, VOLUME, CHANNEL);
+			usbMIDI.send_now();
+			delayMicros(DELAY);
+			usbMIDI.sendNoteOn(71, VOLUME, CHANNEL);
+			break;
+		case B10100:	//C, XCEGCE
+			usbMIDI.sendNoteOn(76, VOLUME, CHANNEL);
+			usbMIDI.send_now();
+			delayMicros(DELAY);
+			usbMIDI.sendNoteOn(72, VOLUME, CHANNEL);
+			usbMIDI.send_now();
+			delayMicros(DELAY);
+			usbMIDI.sendNoteOn(67, VOLUME, CHANNEL);
+			usbMIDI.send_now();
+			delayMicros(DELAY);
+			usbMIDI.sendNoteOn(64, VOLUME, CHANNEL);
+			usbMIDI.send_now();
+			delayMicros(DELAY);
+			usbMIDI.sendNoteOn(60, VOLUME, CHANNEL);
+			break;
+		case B00001:	//Am, XAEACE
+			usbMIDI.sendNoteOn(88, VOLUME, CHANNEL);
+			usbMIDI.send_now();
+			delayMicros(DELAY);
+			usbMIDI.sendNoteOn(84, VOLUME, CHANNEL);
+			usbMIDI.send_now();
+			delayMicros(DELAY);
+			usbMIDI.sendNoteOn(81, VOLUME, CHANNEL);
+			usbMIDI.send_now();
+			delayMicros(DELAY);
+			usbMIDI.sendNoteOn(76, VOLUME, CHANNEL);
+			usbMIDI.send_now();
+			delayMicros(DELAY);
+			usbMIDI.sendNoteOn(69, VOLUME, CHANNEL);
+			break;
+		case B01100:	//C#m, XDADFA
+			usbMIDI.sendNoteOn(81, VOLUME, CHANNEL);
+			usbMIDI.send_now();
+			delayMicros(DELAY);
+			usbMIDI.sendNoteOn(77, VOLUME, CHANNEL);
+			usbMIDI.send_now();
+			delayMicros(DELAY);
+			usbMIDI.sendNoteOn(74, VOLUME, CHANNEL);
+			usbMIDI.send_now();
+			delayMicros(DELAY);
+			usbMIDI.sendNoteOn(69, VOLUME, CHANNEL);
+			usbMIDI.send_now();
+			delayMicros(DELAY);
+			usbMIDI.sendNoteOn(62, VOLUME, CHANNEL);
+			break;
+		case B01101:	//E, EBEG#BE
+			usbMIDI.sendNoteOn(88, VOLUME, CHANNEL);
+			usbMIDI.send_now();
+			delayMicros(DELAY);
+			usbMIDI.sendNoteOn(83, VOLUME, CHANNEL);
+			usbMIDI.send_now();
+			delayMicros(DELAY);
+			usbMIDI.sendNoteOn(80, VOLUME, CHANNEL);
+			usbMIDI.send_now();
+			delayMicros(DELAY);
+			usbMIDI.sendNoteOn(76, VOLUME, CHANNEL);
+			usbMIDI.send_now();
+			delayMicros(DELAY);
+			usbMIDI.sendNoteOn(71, VOLUME, CHANNEL);
+			usbMIDI.send_now();
+			delayMicros(DELAY);
+			usbMIDI.sendNoteOn(64, VOLUME, CHANNEL);
+			break;
+		case B01001:	//Em, EBEGBE
+			usbMIDI.sendNoteOn(88, VOLUME, CHANNEL);
+			usbMIDI.send_now();
+			delayMicros(DELAY);
+			usbMIDI.sendNoteOn(83, VOLUME, CHANNEL);
+			usbMIDI.send_now();
+			delayMicros(DELAY);
+			usbMIDI.sendNoteOn(79, VOLUME, CHANNEL);
+			usbMIDI.send_now();
+			delayMicros(DELAY);
+			usbMIDI.sendNoteOn(76, VOLUME, CHANNEL);
+			usbMIDI.send_now();
+			delayMicros(DELAY);
+			usbMIDI.sendNoteOn(71, VOLUME, CHANNEL);
+			usbMIDI.send_now();
+			delayMicros(DELAY);
+			usbMIDI.sendNoteOn(64, VOLUME, CHANNEL);
+			break;
+		case B10001:	//Cm, XC#G#C#EG#
+			usbMIDI.sendNoteOn(80, VOLUME, CHANNEL);
+			usbMIDI.send_now();
+			delayMicros(DELAY);
+			usbMIDI.sendNoteOn(76, VOLUME, CHANNEL);
+			usbMIDI.send_now();
+			delayMicros(DELAY);
+			usbMIDI.sendNoteOn(73, VOLUME, CHANNEL);
+			usbMIDI.send_now();
+			delayMicros(DELAY);
+			usbMIDI.sendNoteOn(68, VOLUME, CHANNEL);
+			usbMIDI.send_now();
+			delayMicros(DELAY);
+			usbMIDI.sendNoteOn(61, VOLUME, CHANNEL);
+			break;
+		default:
+			break;
 		}
+		usbMIDI.send_now();
 	}
-	return r;
-}
-
-inline gcReport tiltStick(gcReport r) {
-	int cr = r.cx > 170;
-	int cl = r.cx < 84;
-	int cd = r.cy > 164;
-	int cu = r.cy < 90;
-	int nn = cr || cl || cd || cu;
-	r.a |= nn;
-	if (nn && wasn) {
-		if ((cr && cu) || (cr && cd) || (cl && cu) || (cl && cd)) {
-			r.sx = 128;
-			r.sy = 128;
+	else {
+		for (int i = 60; i < 76; i++) {
+			usbMIDI.sendNoteOn(i, 0, CHANNEL);
 		}
-		else if (cr) {
-			r.sx = 170;
-			r.sy = 128;
+		usbMIDI.send_now();
+		for (int i = 76; i < 92; i++) {
+			usbMIDI.sendNoteOn(i, 0, CHANNEL);
 		}
-		else if (cl) {
-			r.sx = 84;
-			r.sy = 128;
-		}
-		else if (cd) {
-			r.sx = 128;
-			r.sy = 164;
-		}
-		else if (cu) {
-			r.sx = 128;
-			r.sy = 90;
-		}
-		wasn = false;
+		usbMIDI.send_now();
 	}
-	if (!nn) wasn = true;
-	r.cx = 128;
-	r.cy = 128;
-	return r;
+	while (usbMIDI.read());
 }*/

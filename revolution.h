@@ -1,21 +1,12 @@
-/*	wii.h is the interface for Wii Remote Attachments and polls the guitar.
+/* revolution.h is the interface for Wii Remote Attachments.
+   
+   Copyright (C) 2018  Stephen Barrack
 
-	Copyright (C) 2018  Stephen Barrack
+   This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 
-	This program is free software: you can redistribute it and/or modify
-	it under the terms of the GNU General Public License as published by
-	the Free Software Foundation, either version 3 of the License, or
-	(at your option) any later version.
+   This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
 
-	This program is distributed in the hope that it will be useful,
-	but WITHOUT ANY WARRANTY; without even the implied warranty of
-	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-	GNU General Public License for more details.
-
-	You should have received a copy of the GNU General Public License
-	along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
-	For any issues, please contact stephen.barrack12@yahoo.com.
+   You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 /*	Wii Remote attachments [1] use a 2-wire Interface (TWI/I2C) [2] which
@@ -25,8 +16,8 @@
 	[2] https://en.wikipedia.org/wiki/I%C2%B2C
 	[3] https://forum.pjrc.com/threads/21680-New-I2C-library-for-Teensy3
 	
-	Controllers: Nunchuck, Classic Controller (and Pro version), Guitar
-	Arduinos: Teensy (LC, 3.x) > 8 MHz
+	Tested controllers: Nunchuck, Classic Controller (and Pro version), Guitar
+	Tested Arduinos: Teensy 3.2, 3.5, 3.6
 	
 	The Wii Motion Plus is a useable device and does poll properly, but I
 	removed support for it since it's useless.
@@ -52,53 +43,14 @@ public:
 	uint8_t id[6];
 	WiiAttachment() : wire(i2c_t3(0)), pins(I2C_PINS_16_17) {}
 	WiiAttachment(int bus, i2c_pins pins) : wire(i2c_t3(bus)), pins(pins) {}
-
-	// TODO: It's shifted one byte for some reason, maybe timing, fix it.
-	inline void identify() {
-		cli();
-		wire.beginTransmission(CON);
-		wire.write(0xFA);
-		wire.write(0);
-		while (wire.endTransmission());
-		MICROS(36);
-		delay(1);
-		wire.requestFrom(CON, 6);
-		wire.readBytes(id, 6);
-		sei();
-	}
-
-	inline void poll() {
-		cli();
-		wire.beginTransmission(CON);
-		wire.write(0);
-		while (wire.endTransmission());
-		MICROS(157);
-		wire.requestFrom(CON, 6);
-		wire.readBytes(raw, 6);
-		updateReport();
-		sei();
-	}
-
-	inline void init() {
-		cli();
-		wire.begin(I2C_MASTER, 0, pins, I2C_PULLUP_EXT, 400000);
-		wire.beginTransmission(CON);
-		wire.write(0xF0);
-		wire.write(0x55);
-		while (wire.endTransmission());
-		wire.beginTransmission(CON);
-		wire.write(0xFB);
-		wire.write(0);
-		while (wire.endTransmission());
-		sei();
-		identify();
-		poll();
-	}
-
+	void identify(), poll(), init();
+	
 protected:
 	i2c_t3 wire;
 	i2c_pins pins;
+	bool jally;
 	virtual void updateReport() {}
+	void jalhalla();
 };
 
 struct NunchuckReport {
@@ -200,6 +152,7 @@ public:
 	GuitarWiiReport report;
 	GuitarWii() : WiiAttachment() {}
 	GuitarWii(int bus, i2c_pins pins) : WiiAttachment(bus, pins) {}
+	void sendJoyUSB();
 protected:
 	void updateReport();
 };

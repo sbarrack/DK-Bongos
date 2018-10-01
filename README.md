@@ -1,2 +1,2 @@
-# ProjectBongo / guitar
-TODO: Write the README XP
+# ProjectBongo
+TODO Write the README XD
