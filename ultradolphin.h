@@ -254,3 +254,48 @@ void bongofy() {
 	r.a = r.a || c;
 	return r;
 }*/
+
+union N64 {
+	uint8_t raw[4];
+	uint16_t raw16[2];
+	struct {
+		uint8_t dr : 1;
+		uint8_t dl : 1;
+		uint8_t dd : 1;
+		uint8_t du : 1;
+		uint8_t start : 1;
+		uint8_t z : 1;
+		uint8_t b : 1;
+		uint8_t a : 1;
+
+		uint8_t cr : 1;
+		uint8_t cl : 1;
+		uint8_t cd : 1;
+		uint8_t cu : 1;
+		uint8_t r : 1;
+		uint8_t l : 1;
+		uint8_t reset : 1;
+		uint8_t : 1;
+
+				  int8_t sx, sy;
+	};
+} n64;
+
+class Controller {
+public:
+	Controller::Controller(HardwareSerial serial = Serial1) : serial(serial) {
+		serial.begin(115200);
+		while (!serial);
+		serial.readStringUntil('\n');
+
+	}
+	void poll();
+	void print();
+
+private:
+	HardwareSerial serial;
+	String in[3];
+	N64 n64;
+	void pad16(uint16_t w);
+
+};
