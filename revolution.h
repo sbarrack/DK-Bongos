@@ -152,7 +152,6 @@ public:
 	GuitarWiiReport report;
 	GuitarWii() : WiiAttachment() {}
 	GuitarWii(int bus, i2c_pins pins) : WiiAttachment(bus, pins) {}
-	void sendJoyUSB();
 protected:
 	void updateReport();
 };
