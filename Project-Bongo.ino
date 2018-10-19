@@ -14,15 +14,10 @@ union N64Report {
 	uint8_t raw[4];
 	//uint16_t raw16[2];
 	uint32_t raw32;
+	// TODO fix reversed bytes
 	struct {
-		uint8_t dr : 1;
-		uint8_t dl : 1;
-		uint8_t dd : 1;
-		uint8_t du : 1;
-		uint8_t start : 1;
-		uint8_t z : 1;
-		uint8_t b : 1;
-		uint8_t a : 1;
+		int8_t sy;
+		int8_t sx;
 
 		uint8_t cr : 1;
 		uint8_t cl : 1;
@@ -32,9 +27,15 @@ union N64Report {
 		uint8_t l : 1;
 		uint8_t reset : 1;
 		uint8_t : 1;
-
-		int8_t sx;
-		int8_t sy;
+		
+		uint8_t dr : 1;
+		uint8_t dl : 1;
+		uint8_t dd : 1;
+		uint8_t du : 1;
+		uint8_t start : 1;
+		uint8_t z : 1;
+		uint8_t b : 1;
+		uint8_t a : 1;
 	};
 } n64data;
 
@@ -110,13 +111,47 @@ static inline uint32_t poll() {
 }
 
 void setup() {
-	Serial.begin(115200);
-	while (!Serial);
+	//Serial.begin(115200);
+	//while (!Serial);
 	pinMode(PIN, OUTPUT);
 }
 
 void loop() {
 	n64data.raw32 = poll();
-	Serial.println(n64data.raw32, HEX);
-	delay(10); // more error the shorter the time between polls
+	//Serial.println(n64data.a, HEX);
+
+	// five notes of pentatonic scale
+	if (n64data.a) {
+		usbMIDI.sendNoteOn(62, 63, 1);
+	}
+	else {
+		usbMIDI.sendNoteOff(62, 63, 1); // D4, A
+	}
+	if (n64data.cd) {
+		usbMIDI.sendNoteOn(65, 63, 1);
+	}
+	else {
+		usbMIDI.sendNoteOff(65, 63, 1); // F4, CD
+	}
+	if (n64data.cr) {
+		usbMIDI.sendNoteOn(69, 63, 1);
+	}
+	else {
+		usbMIDI.sendNoteOff(69, 63, 1); // A4, CR
+	}
+	if (n64data.cl) {
+		usbMIDI.sendNoteOn(71, 63, 1);
+	}
+	else {
+		usbMIDI.sendNoteOff(71, 63, 1); // B4, CL
+	}
+	if (n64data.cu) {
+		usbMIDI.sendNoteOn(74, 63, 1);
+	}
+	else {
+		usbMIDI.sendNoteOff(74, 63, 1); // D5, CU
+	}
+	usbMIDI.send_now();
+
+	delay(5); // more error the shorter the time between polls
 }
