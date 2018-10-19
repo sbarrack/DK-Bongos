@@ -10,6 +10,34 @@
 // nop = 1
 // add = 1
 
+union N64Report {
+	uint8_t raw[4];
+	//uint16_t raw16[2];
+	uint32_t raw32;
+	struct {
+		uint8_t dr : 1;
+		uint8_t dl : 1;
+		uint8_t dd : 1;
+		uint8_t du : 1;
+		uint8_t start : 1;
+		uint8_t z : 1;
+		uint8_t b : 1;
+		uint8_t a : 1;
+
+		uint8_t cr : 1;
+		uint8_t cl : 1;
+		uint8_t cd : 1;
+		uint8_t cu : 1;
+		uint8_t r : 1;
+		uint8_t l : 1;
+		uint8_t reset : 1;
+		uint8_t : 1;
+
+		int8_t sx;
+		int8_t sy;
+	};
+} n64data;
+
 // Copied from pins_teensy.c; computes the address of the mode register for the given pin.
 #define GPIO_BITBAND_ADDR(reg, bitt) (((uint32_t)&(reg) - 0x40000000) * 32 + (bitt) * 4 + 0x42000000)
 
@@ -22,19 +50,18 @@
 // @72mhz = 72 cycles
 #define DELAY_1US "ldr r2,=22\n" "1:\n" "subs r2,#1\n" "bne 1b\n"// "nop\n nop\n"
 
-#define BT2P5 "ldr r2,=45\n" "1:\n" "subs r2,#1\n" "bne 1b\n"
-#define BT2 "ldr r2,=46\n" "1:\n" "subs r2,#1\n" "bne 1b\n" "nop\n nop\n"
+#define BT2P5 "ldr r2,=49\n" "1:\n" "subs r2,#1\n" "bne 1b\n"
+#define BT2 "ldr r2,=42\n" "1:\n" "subs r2,#1\n" "bne 1b\n" "nop\n nop\n"
 #define BT3 "ldr r2,=70\n" "1:\n" "subs r2,#1\n" "bne 1b\n" "nop\n nop\n"
 
 // low 3us, high 1us
-//#define SEND_ZERO SET_LOW DELAY_1US DELAY_1US DELAY_1US SET_HIGH DELAY_1US
 #define SEND_ZERO SET_LOW BT3 SET_HIGH DELAY_1US
 
 // low 1us, high 3us
 #define SEND_ONE SET_LOW DELAY_1US SET_HIGH BT3
 
-// Rather than watch for the rising/falling edge we just poll in the middle of the period. It's crude but it works.
-#define RECEIVE_BIT BT2 "ldr r1,[%3]\n" /* read port value */ "str r1,[%0]\n" /* store into array */ "add %0,%0,#4\n" /* increment array ptr */ BT2P5
+// Rather than watch for the rising/falling edge we just poll in the middle of the period. It's crude but it works. Note: timing is currently set to be in the most optimal position between the falling and rising edges to get the actual peak of the wave and the least error
+#define RECEIVE_BIT BT2P5 "ldr r1,[%3]\n" /* read port value */ "str r1,[%0]\n" /* store into array */ "add %0,%0,#4\n" /* increment array ptr */ BT2
 
 #define PIN 0
 
@@ -89,8 +116,7 @@ void setup() {
 }
 
 void loop() {
-	uint32_t data = poll();
-	Serial.print(data < 0x10000000 ? data < 0x1000000 ? data < 0x100000 ? data < 0x10000 ? data < 0x1000 ? data < 0x100 ? data < 0x10 ? "0000000" : "000000" : "00000" : "0000" : "000" : "00" : "0" : ""); // pad zeros
-	Serial.println(data, HEX);
-	delay(10);
+	n64data.raw32 = poll();
+	Serial.println(n64data.raw32, HEX);
+	delay(10); // more error the shorter the time between polls
 }
