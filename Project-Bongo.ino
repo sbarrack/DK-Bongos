@@ -38,7 +38,7 @@ union N64Report {
 		uint8_t b : 1;
 		uint8_t a : 1;
 	};
-} n64data;
+} n64data, olddata;
 
 // Copied from avr_emulation.h; computes the address of the mode register for the given pin.
 #define GPIO_BITBAND_ADDR(reg, bit) (((uint32_t)&(reg) - 0x40000000) * 32 + (bit) * 4 + 0x42000000)
@@ -113,66 +113,61 @@ void setup() {
 
 }
 
-uint8_t then[8];
+int umod;
 void loop() {
 	n64data.raw32 = poll();
 
-	uint8_t now = n64data.a | n64data.cd << 1 | n64data.cr << 2;
-	if (then[sizeof(then) - 1] == now) {
-		switch (now) {
-		case 1: // C4
-			usbMIDI.sendNoteOn(60, 63, 1);
-			break;
-		case 2:
-			usbMIDI.sendNoteOn(62, 63, 1);
-			break;
-		case 3:
-			usbMIDI.sendNoteOn(64, 63, 1);
-			break;
-		case 4:
-			usbMIDI.sendNoteOn(65, 63, 1);
-			break;
-		case 5:
-			usbMIDI.sendNoteOn(67, 63, 1);
-			break;
-		case 6:
-			usbMIDI.sendNoteOn(69, 63, 1);
-			break;
-		case 7:
-			usbMIDI.sendNoteOn(71, 63, 1);
-			break;
-		}
-		usbMIDI.send_now();
-	} else {
-		switch (then[sizeof(then) - 1]) {
-		case 1:
-			usbMIDI.sendNoteOff(60, 63, 1);
-			break;
-		case 2:
-			usbMIDI.sendNoteOff(62, 63, 1);
-			break;
-		case 3:
-			usbMIDI.sendNoteOff(64, 63, 1);
-			break;
-		case 4:
-			usbMIDI.sendNoteOff(65, 63, 1);
-			break;
-		case 5:
-			usbMIDI.sendNoteOff(67, 63, 1);
-			break;
-		case 6:
-			usbMIDI.sendNoteOff(69, 63, 1);
-			break;
-		case 7:
-			usbMIDI.sendNoteOff(71, 63, 1);
-			break;
-		}
-		usbMIDI.send_now();
+	// TODO have input buffer for mod buttons only, L+R = extra harmony/dual chambers, individual sharps and flats?
+	int mod = n64data.du - n64data.dd + (n64data.r ? 12 : 0) - (n64data.l ? 12 : 0);
+	if (umod != mod) {
+		usbMIDI.sendNoteOff(62 + umod, 63, 1);
+		usbMIDI.sendNoteOff(65 + umod, 63, 1);
+		usbMIDI.sendNoteOff(67 + umod, 63, 1);
+		usbMIDI.sendNoteOff(69 + umod, 63, 1);
+		usbMIDI.sendNoteOff(71 + umod, 63, 1);
+		usbMIDI.sendNoteOff(74 + umod, 63, 1);
 	}
-	for (int i = sizeof(then) - 1; i > -1; i--) {
-		then[i] = then[i - 1];
+	else if (olddata.raw32 != n64data.raw32) {
+		if (n64data.a) { // D4
+			usbMIDI.sendNoteOn(62 + mod, 63, 1);
+		}
+		else {
+			usbMIDI.sendNoteOff(62 + mod, 63, 1);
+		}
+		if (n64data.cd) { // F4
+			usbMIDI.sendNoteOn(65 + mod, 63, 1);
+		}
+		else {
+			usbMIDI.sendNoteOff(65 + mod, 63, 1);
+		}
+		if (n64data.cr) { // G4
+			usbMIDI.sendNoteOn(67 + mod, 63, 1);
+		}
+		else {
+			usbMIDI.sendNoteOff(67 + mod, 63, 1);
+		}
+		if (n64data.b) { // A4
+			usbMIDI.sendNoteOn(69 + mod, 63, 1);
+		}
+		else {
+			usbMIDI.sendNoteOff(69 + mod, 63, 1);
+		}
+		if (n64data.cl) { // B4
+			usbMIDI.sendNoteOn(71 + mod, 63, 1);
+		}
+		else {
+			usbMIDI.sendNoteOff(71 + mod, 63, 1);
+		}
+		if (n64data.cu) { // D4
+			usbMIDI.sendNoteOn(74 + mod, 63, 1);
+		}
+		else {
+			usbMIDI.sendNoteOff(74 + mod, 63, 1);
+		}
 	}
-	then[0] = now;
+	usbMIDI.send_now();
+	umod = mod;
+	olddata = n64data;
 
 	delay(5); // more error the shorter the time between polls
 }
