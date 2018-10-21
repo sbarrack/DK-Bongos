@@ -118,7 +118,7 @@ void loop() {
 	n64data.raw32 = poll();
 
 	// TODO have input buffer for mod buttons only, L+R = extra harmony/dual chambers, individual sharps and flats?
-	int mod = n64data.du - n64data.dd + (n64data.r ? 12 : 0) - (n64data.l ? 12 : 0);
+	int mod = n64data.du - n64data.dd + (n64data.dr ? 12 : 0) - (n64data.dl ? 12 : 0);
 	if (umod != mod) {
 		usbMIDI.sendNoteOff(62 + umod, 63, 1);
 		usbMIDI.sendNoteOff(65 + umod, 63, 1);
@@ -158,7 +158,7 @@ void loop() {
 		else {
 			usbMIDI.sendNoteOff(71 + mod, 63, 1);
 		}
-		if (n64data.cu) { // D4
+		if (n64data.cu) { // D5
 			usbMIDI.sendNoteOn(74 + mod, 63, 1);
 		}
 		else {
