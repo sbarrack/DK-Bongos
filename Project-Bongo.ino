@@ -2,19 +2,20 @@
  * Link: https://forum.pjrc.com/threads/26753-Reading-an-N64-controller-getting-no-data
  */
 
-// timings http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.ddi0344k/Cfacfihf.html
-// str = 2
-// ldr = 2
-// sub = 1
-// b = 1 if fail, 2 otherwise
-// nop = 1
-// add = 1
+/* timings http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.ddi0344k/Cfacfihf.html
+ * ldr = 2
+ * str = 2
+ * b = 1 no branch, 2-4 otherwise
+ * add = 1
+ * sub = 1
+ * nop = 1, none if not volatile
+ */
 
 union N64Report {
 	uint8_t raw[4];
 	//uint16_t raw16[2];
 	uint32_t raw32;
-	// TODO fix reversed bytes
+	// TODO fix reversed bytes?
 	struct {
 		int8_t sy;
 		int8_t sx;
@@ -39,36 +40,31 @@ union N64Report {
 	};
 } n64data;
 
-// Copied from pins_teensy.c; computes the address of the mode register for the given pin.
-#define GPIO_BITBAND_ADDR(reg, bitt) (((uint32_t)&(reg) - 0x40000000) * 32 + (bitt) * 4 + 0x42000000)
+// Copied from avr_emulation.h; computes the address of the mode register for the given pin.
+#define GPIO_BITBAND_ADDR(reg, bit) (((uint32_t)&(reg) - 0x40000000) * 32 + (bit) * 4 + 0x42000000)
 
-// set the output port low
-#define SET_LOW "str %4, [%2, 4]\n"
+#define SET_LOW "str %4, [%2, 4]\n" // set the outport low
+#define SET_HIGH "str %4, [%2, 0]\n" // set the outport high
 
-// set the output port high
-#define SET_HIGH "str %4, [%2, 0]\n"
+#define LOOP "1:\n" "subs r2,#1\n" "bne 1b\n"
+// 1us @ 72MHz = 72
+#define NOP2 "nop\n nop\n"
+#define NOP70 "ldr r2,=22\n" LOOP
+#define NOP151 "ldr r2,=49\n" LOOP
+#define NOP132 "ldr r2,=42\n" LOOP NOP2
+#define NOP216 "ldr r2,=70\n" LOOP NOP2
 
-// @72mhz = 72 cycles
-#define DELAY_1US "ldr r2,=22\n" "1:\n" "subs r2,#1\n" "bne 1b\n"// "nop\n nop\n"
+#define SEND_ZERO SET_LOW NOP216 SET_HIGH NOP70 // low 3us, high 1us
+#define SEND_ONE SET_LOW NOP70 SET_HIGH NOP216 // low 1us, high 3us
 
-#define BT2P5 "ldr r2,=49\n" "1:\n" "subs r2,#1\n" "bne 1b\n"
-#define BT2 "ldr r2,=42\n" "1:\n" "subs r2,#1\n" "bne 1b\n" "nop\n nop\n"
-#define BT3 "ldr r2,=70\n" "1:\n" "subs r2,#1\n" "bne 1b\n" "nop\n nop\n"
-
-// low 3us, high 1us
-#define SEND_ZERO SET_LOW BT3 SET_HIGH DELAY_1US
-
-// low 1us, high 3us
-#define SEND_ONE SET_LOW DELAY_1US SET_HIGH BT3
-
-// Rather than watch for the rising/falling edge we just poll in the middle of the period. It's crude but it works. Note: timing is currently set to be in the most optimal position between the falling and rising edges to get the actual peak of the wave and the least error
-#define RECEIVE_BIT BT2P5 "ldr r1,[%3]\n" /* read port value */ "str r1,[%0]\n" /* store into array */ "add %0,%0,#4\n" /* increment array ptr */ BT2
+// hard code timing to read at the expected peak rather than basing it on the falling edge; sensitive, don't change timing
+#define RECEIVE_BIT NOP151 "ldr r1,[%3]\n" /* read port value */ "str r1,[%0]\n" /* store into array */ "add %0,%0,#4\n" /* increment array ptr */ NOP132
 
 #define PIN 0
 
 static inline uint32_t poll() {
-	static uint32_t modeReg = GPIO_BITBAND_ADDR(CORE_PIN0_PORTREG, CORE_PIN0_BIT); // + 160; // ?
-	uint32_t buffer[33];
+	static uint32_t modeReg = GPIO_BITBAND_ADDR(CORE_PIN0_PORTREG, CORE_PIN0_BIT);
+	uint32_t buffer[33]; // 32 bits; 1 stop bit?
 
 	uint8_t oldSREG = SREG;
 	cli();
@@ -92,7 +88,7 @@ static inline uint32_t poll() {
 		RECEIVE_BIT RECEIVE_BIT RECEIVE_BIT RECEIVE_BIT
 		RECEIVE_BIT RECEIVE_BIT RECEIVE_BIT RECEIVE_BIT
 		RECEIVE_BIT RECEIVE_BIT RECEIVE_BIT RECEIVE_BIT
-		RECEIVE_BIT // stop
+		//RECEIVE_BIT // stop
 		:
 		: "r" (buffer), "r" (modeReg), "r" (&CORE_PIN0_PORTSET), "r" (&CORE_PIN0_PINREG), "r" (CORE_PIN0_BITMASK)
 		: "r0", "r1", "r2"
@@ -113,45 +109,70 @@ static inline uint32_t poll() {
 void setup() {
 	//Serial.begin(115200);
 	//while (!Serial);
-	pinMode(PIN, OUTPUT);
+	pinMode(PIN, OUTPUT); // init pin
+
 }
 
+uint8_t then[8];
 void loop() {
 	n64data.raw32 = poll();
-	//Serial.println(n64data.a, HEX);
 
-	// five notes of pentatonic scale
-	if (n64data.a) {
-		usbMIDI.sendNoteOn(62, 63, 1);
+	uint8_t now = n64data.a | n64data.cd << 1 | n64data.cr << 2;
+	if (then[sizeof(then) - 1] == now) {
+		switch (now) {
+		case 1: // C4
+			usbMIDI.sendNoteOn(60, 63, 1);
+			break;
+		case 2:
+			usbMIDI.sendNoteOn(62, 63, 1);
+			break;
+		case 3:
+			usbMIDI.sendNoteOn(64, 63, 1);
+			break;
+		case 4:
+			usbMIDI.sendNoteOn(65, 63, 1);
+			break;
+		case 5:
+			usbMIDI.sendNoteOn(67, 63, 1);
+			break;
+		case 6:
+			usbMIDI.sendNoteOn(69, 63, 1);
+			break;
+		case 7:
+			usbMIDI.sendNoteOn(71, 63, 1);
+			break;
+		}
+		usbMIDI.send_now();
+	} else {
+		switch (then[sizeof(then) - 1]) {
+		case 1:
+			usbMIDI.sendNoteOff(60, 63, 1);
+			break;
+		case 2:
+			usbMIDI.sendNoteOff(62, 63, 1);
+			break;
+		case 3:
+			usbMIDI.sendNoteOff(64, 63, 1);
+			break;
+		case 4:
+			usbMIDI.sendNoteOff(65, 63, 1);
+			break;
+		case 5:
+			usbMIDI.sendNoteOff(67, 63, 1);
+			break;
+		case 6:
+			usbMIDI.sendNoteOff(69, 63, 1);
+			break;
+		case 7:
+			usbMIDI.sendNoteOff(71, 63, 1);
+			break;
+		}
+		usbMIDI.send_now();
 	}
-	else {
-		usbMIDI.sendNoteOff(62, 63, 1); // D4, A
+	for (int i = sizeof(then) - 1; i > -1; i--) {
+		then[i] = then[i - 1];
 	}
-	if (n64data.cd) {
-		usbMIDI.sendNoteOn(65, 63, 1);
-	}
-	else {
-		usbMIDI.sendNoteOff(65, 63, 1); // F4, CD
-	}
-	if (n64data.cr) {
-		usbMIDI.sendNoteOn(69, 63, 1);
-	}
-	else {
-		usbMIDI.sendNoteOff(69, 63, 1); // A4, CR
-	}
-	if (n64data.cl) {
-		usbMIDI.sendNoteOn(71, 63, 1);
-	}
-	else {
-		usbMIDI.sendNoteOff(71, 63, 1); // B4, CL
-	}
-	if (n64data.cu) {
-		usbMIDI.sendNoteOn(74, 63, 1);
-	}
-	else {
-		usbMIDI.sendNoteOff(74, 63, 1); // D5, CU
-	}
-	usbMIDI.send_now();
+	then[0] = now;
 
 	delay(5); // more error the shorter the time between polls
 }
