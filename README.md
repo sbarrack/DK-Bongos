@@ -1,2 +1,2 @@
-# ProjectBongo / bluetooth
+# ProjectBongo
 TODO Write the README XD
