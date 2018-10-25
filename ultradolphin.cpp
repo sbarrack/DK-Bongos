@@ -759,3 +759,4 @@ extern void osVoiceCountSyllables(u8 *, u32 *);
 /*----------------------------------------------------------------------*
 #define	nuVrsCheckWord		osVoiceCheckWord
 #define	nuVrsCountSyllables	osVoiceCountSyllables
+*/

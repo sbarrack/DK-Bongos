@@ -41,7 +41,7 @@ class WiiAttachment {
 public:
 	uint8_t raw[6];
 	uint8_t id[6];
-	WiiAttachment() : wire(i2c_t3(0)), pins(I2C_PINS_16_17) {}
+	WiiAttachment() : wire(i2c_t3(0)), pins(I2C_PINS_18_19) {}
 	WiiAttachment(int bus, i2c_pins pins) : wire(i2c_t3(bus)), pins(pins) {}
 	void identify(), poll(), init();
 	
