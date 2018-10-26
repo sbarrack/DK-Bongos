@@ -1,5 +1,5 @@
-/* Borrowed this from some post I found online that was really helpful and gave me a lot of ideas.
- * Link: https://forum.pjrc.com/threads/26753-Reading-an-N64-controller-getting-no-data
+/* Shout out to Rena, whoever you are, your code was really helpful!
+ * https://forum.pjrc.com/threads/26753-Reading-an-N64-controller-getting-no-data
  */
 
 /* timings http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.ddi0344k/Cfacfihf.html
@@ -11,37 +11,12 @@
  * nop = 1, none if not volatile
  */
 
-union N64Report {
-	uint8_t raw[4];
-	//uint16_t raw16[2];
-	uint32_t raw32;
-	// TODO fix reversed bytes?
-	struct {
-		int8_t sy;
-		int8_t sx;
+#include <Arduino.h>
+#include "types.h"
+#include "revolution.h"
 
-		uint8_t cr : 1;
-		uint8_t cl : 1;
-		uint8_t cd : 1;
-		uint8_t cu : 1;
-		uint8_t r : 1;
-		uint8_t l : 1;
-		uint8_t reset : 1;
-		uint8_t : 1;
-		
-		uint8_t dr : 1;
-		uint8_t dl : 1;
-		uint8_t dd : 1;
-		uint8_t du : 1;
-		uint8_t start : 1;
-		uint8_t z : 1;
-		uint8_t b : 1;
-		uint8_t a : 1;
-	};
-} n64data, olddata;
-
-// Copied from avr_emulation.h; computes the address of the mode register for the given pin.
-#define GPIO_BITBAND_ADDR(reg, bit) (((uint32_t)&(reg) - 0x40000000) * 32 + (bit) * 4 + 0x42000000)
+// address for GPIO n64mode register of given pin
+#define GPIO_BITBAND_ADDR(reg, bitt) (((u32)&(reg) - 0x40000000) * 32 + (bitt) * 4 + 0x42000000)
 
 #define SET_LOW "str %4, [%2, 4]\n" // set the outport low
 #define SET_HIGH "str %4, [%2, 0]\n" // set the outport high
@@ -61,17 +36,48 @@ union N64Report {
 #define RECEIVE_BIT NOP151 "ldr r1,[%3]\n" /* read port value */ "str r1,[%0]\n" /* store into array */ "add %0,%0,#4\n" /* increment array ptr */ NOP132
 
 #define PIN 0
+#define VOL 63
+#define CHAN 1
 
-static inline uint32_t poll() {
-	static uint32_t modeReg = GPIO_BITBAND_ADDR(CORE_PIN0_PORTREG, CORE_PIN0_BIT);
-	uint32_t buffer[33]; // 32 bits; 1 stop bit?
+union N64Report {
+	u8 raw[4];
+	//uint16_t raw16[2];
+	u32 raw32;
+	// TODO fix reversed bytes?
+	struct {
+		s8 sy;
+		s8 sx;
 
-	uint8_t oldSREG = SREG;
+		u8 cr : 1;
+		u8 cl : 1;
+		u8 cd : 1;
+		u8 cu : 1;
+		u8 r : 1;
+		u8 l : 1;
+		u8 reset : 1;
+		u8 : 1;
+
+		u8 dr : 1;
+		u8 dl : 1;
+		u8 dd : 1;
+		u8 du : 1;
+		u8 start : 1;
+		u8 z : 1;
+		u8 b : 1;
+		u8 a : 1;
+	};
+} n64data, olddata;
+
+static inline u32 n64poll() {
+	static u32 n64modeReg = GPIO_BITBAND_ADDR(CORE_PIN0_PORTREG, CORE_PIN0_BIT);
+	u32 buffer[33]; // 32 bits; 1 stop bit?
+
+	u8 oldSREG = SREG;
 	cli();
 	__asm__ volatile (
 		"ldr r0,=0\n"
 		"ldr r1,=1\n"
-		"str r0,[%1]\n" // pin to output mode
+		"str r0,[%1]\n" // pin to output n64mode
 
 		// 0x01
 		SEND_ZERO SEND_ZERO SEND_ZERO SEND_ZERO
@@ -79,7 +85,7 @@ static inline uint32_t poll() {
 		SEND_ONE // stop
 
 		// 4 bytes
-		"str r1,[%1]\n" // pin to input mode
+		"str r1,[%1]\n" // pin to input n64mode
 		RECEIVE_BIT RECEIVE_BIT RECEIVE_BIT RECEIVE_BIT
 		RECEIVE_BIT RECEIVE_BIT RECEIVE_BIT RECEIVE_BIT
 		RECEIVE_BIT RECEIVE_BIT RECEIVE_BIT RECEIVE_BIT
@@ -90,13 +96,13 @@ static inline uint32_t poll() {
 		RECEIVE_BIT RECEIVE_BIT RECEIVE_BIT RECEIVE_BIT
 		//RECEIVE_BIT // stop
 		:
-		: "r" (buffer), "r" (modeReg), "r" (&CORE_PIN0_PORTSET), "r" (&CORE_PIN0_PINREG), "r" (CORE_PIN0_BITMASK)
+		: "r" (buffer), "r" (n64modeReg), "r" (&CORE_PIN0_PORTSET), "r" (&CORE_PIN0_PINREG), "r" (CORE_PIN0_BITMASK)
 		: "r0", "r1", "r2"
 	);
 	SREG = oldSREG;
 
 	// parse
-	uint32_t data = 0;
+	u32 data = 0;
 	for (int i = 0; i < 32; i++) {
 		if (buffer[i] & CORE_PIN0_BITMASK) {
 			data |= 1 << (31 - i);
@@ -110,64 +116,64 @@ void setup() {
 	//Serial.begin(115200);
 	//while (!Serial);
 	pinMode(PIN, OUTPUT); // init pin
-
 }
 
-int umod;
+int n64umod;
 void loop() {
-	n64data.raw32 = poll();
+	delay(10); // more error the shorter the time between n64polls, less time to buffer inputs too
+	n64data.raw32 = n64poll();
 
-	// TODO have input buffer for mod buttons only, L+R = extra harmony/dual chambers, individual sharps and flats?
-	int mod = n64data.du - n64data.dd + (n64data.dr ? 12 : 0) - (n64data.dl ? 12 : 0);
-	if (umod != mod) {
-		usbMIDI.sendNoteOff(62 + umod, 63, 1);
-		usbMIDI.sendNoteOff(65 + umod, 63, 1);
-		usbMIDI.sendNoteOff(67 + umod, 63, 1);
-		usbMIDI.sendNoteOff(69 + umod, 63, 1);
-		usbMIDI.sendNoteOff(71 + umod, 63, 1);
-		usbMIDI.sendNoteOff(74 + umod, 63, 1);
+	// TODO input buffer for n64mod buttons?;
+	// L, R = apply n64mod to 2nd, 3rd note pressed only? fixed harmony, toggle major/minor/interval?
+	int n64mod = n64data.du - n64data.dd + (n64data.dr ? 12 : 0) - (n64data.dl ? 12 : 0);
+	if (n64umod != n64mod) {
+		usbMIDI.sendNoteOff(62 + n64umod, VOL, CHAN);
+		usbMIDI.sendNoteOff(65 + n64umod, VOL, CHAN);
+		usbMIDI.sendNoteOff(67 + n64umod, VOL, CHAN);
+		usbMIDI.sendNoteOff(69 + n64umod, VOL, CHAN);
+		usbMIDI.sendNoteOff(71 + n64umod, VOL, CHAN);
+		usbMIDI.sendNoteOff(74 + n64umod, VOL, CHAN);
 	}
 	else if (olddata.raw32 != n64data.raw32) {
 		if (n64data.a) { // D4
-			usbMIDI.sendNoteOn(62 + mod, 63, 1);
+			usbMIDI.sendNoteOn(62 + n64mod, VOL, CHAN);
 		}
 		else {
-			usbMIDI.sendNoteOff(62 + mod, 63, 1);
+			usbMIDI.sendNoteOff(62 + n64mod, VOL, CHAN);
 		}
 		if (n64data.cd) { // F4
-			usbMIDI.sendNoteOn(65 + mod, 63, 1);
+			usbMIDI.sendNoteOn(65 + n64mod, VOL, CHAN);
 		}
 		else {
-			usbMIDI.sendNoteOff(65 + mod, 63, 1);
+			usbMIDI.sendNoteOff(65 + n64mod, VOL, CHAN);
 		}
 		if (n64data.cr) { // G4
-			usbMIDI.sendNoteOn(67 + mod, 63, 1);
+			usbMIDI.sendNoteOn(67 + n64mod, VOL, CHAN);
 		}
 		else {
-			usbMIDI.sendNoteOff(67 + mod, 63, 1);
+			usbMIDI.sendNoteOff(67 + n64mod, VOL, CHAN);
 		}
 		if (n64data.b) { // A4
-			usbMIDI.sendNoteOn(69 + mod, 63, 1);
+			usbMIDI.sendNoteOn(69 + n64mod, VOL, CHAN);
 		}
 		else {
-			usbMIDI.sendNoteOff(69 + mod, 63, 1);
+			usbMIDI.sendNoteOff(69 + n64mod, VOL, CHAN);
 		}
 		if (n64data.cl) { // B4
-			usbMIDI.sendNoteOn(71 + mod, 63, 1);
+			usbMIDI.sendNoteOn(71 + n64mod, VOL, CHAN);
 		}
 		else {
-			usbMIDI.sendNoteOff(71 + mod, 63, 1);
+			usbMIDI.sendNoteOff(71 + n64mod, VOL, CHAN);
 		}
 		if (n64data.cu) { // D5
-			usbMIDI.sendNoteOn(74 + mod, 63, 1);
+			usbMIDI.sendNoteOn(74 + n64mod, VOL, CHAN);
 		}
 		else {
-			usbMIDI.sendNoteOff(74 + mod, 63, 1);
+			usbMIDI.sendNoteOff(74 + n64mod, VOL, CHAN);
 		}
 	}
 	usbMIDI.send_now();
-	umod = mod;
+	n64umod = n64mod;
 	olddata = n64data;
-
-	delay(5); // more error the shorter the time between polls
+	
 }
