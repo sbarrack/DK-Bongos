@@ -39,7 +39,7 @@ void MKB::scan() {
 #endif // MACRO_KEYS > 3
 #endif // MACRO_KEYS > 2
 #endif // MACRO_KEYS > 1
-	uint8_t exor = buffer[0].keys ^ buffer[1].keys;
+	u8 exor = buffer[0].keys ^ buffer[1].keys;
 	down.keys = exor & buffer[0].keys;
 	held.keys = buffer[0].keys & buffer[1].keys;
 	up.keys = exor & buffer[1].keys;

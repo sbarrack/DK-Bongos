@@ -117,7 +117,66 @@ typedef struct {
 	u8      addressCrc;             /* CRC code for address *
 	u8      dataCrc;                /* CRC code for data *
 	u8	errno;
-} OSContRamIo;
+} OSContRamIo;*/
+/*
+// crc = cyclical redundancy check
+word calc_addr_crc ( word address )
+{
+	/* CRC table *
+uint16_t xor_table[16] = { 0x0, 0x0, 0x0, 0x0, 0x0, 0x15, 0x1F, 0x0B, 0x16, 0x19, 0x07, 0x0E, 0x1C, 0x0D, 0x1A, 0x01 };
+uint16_t crc = 0;
+
+/* Make sure we have a valid address *
+address &= ~0x1F;
+
+/* Go through each bit in the address, and if set, xor the right value into the output *
+for (int i = 15; i >= 5; i--)
+{
+	/* Is this bit set? *
+	if (((address >> i) & 0x1))
+	{
+		crc ^= xor_table[i];
+	}
+}
+
+/* Just in case *
+crc &= 0x1F;
+
+/* Create a new address with the CRC appended *
+return address | crc;
+}
+
+unsigned char calc_data_crc(unsigned char *data)
+{
+	unsigned char ret = 0;
+
+	for (int i = 0; i <= 32; i++)
+	{
+		for (int j = 7; j >= 0; j--)
+		{
+			int tmp = 0;
+
+			if (ret & 0x80)
+			{
+				tmp = 0x85;
+			}
+
+			ret <<= 1;
+
+			if (i < 32)
+			{
+				if (data[i] & (0x01 << j))
+				{
+					ret |= 0x1;
+				}
+			}
+
+			ret ^= tmp;
+		}
+	}
+
+	return ret;
+}
 
 /* controller errors *
 #define CONT_NO_RESPONSE_ERROR          0x8

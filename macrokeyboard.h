@@ -1,5 +1,6 @@
 #pragma once
 #include <Arduino.h>
+#include "types.h"
 
 #ifndef MACRO_KEYS
 #define MACRO_KEYS 1 // any more than 6 keys should use a matrix instead
@@ -24,16 +25,16 @@
 #endif // !KEY6
 
 union Row {
-	uint8_t keys;
+	u8 keys;
 	struct {
 		// LSB order
-		uint8_t key1 : 1;
-		uint8_t key2 : 1;
-		uint8_t key3 : 1;
-		uint8_t key4 : 1;
-		uint8_t key5 : 1;
-		uint8_t key6 : 1;
-		//uint8_t : 2;
+		u8 key1 : 1;
+		u8 key2 : 1;
+		u8 key3 : 1;
+		u8 key4 : 1;
+		u8 key5 : 1;
+		u8 key6 : 1;
+		//u8 : 2;
 	};
 };
 

@@ -8,12 +8,15 @@
  * b = 1 no branch, 2-4 otherwise
  * add = 1
  * sub = 1
- * nop = 1, none if not volatile
+ * nop = 1, 0 if not volatile
  */
+
+#define MACRO_KEYS 5
 
 #include <Arduino.h>
 #include "types.h"
-#include "revolution.h"
+#include "macrokeyboard.h"
+/*#include "revolution.h"
 
 // address for GPIO n64mode register of given pin
 #define GPIO_BITBAND_ADDR(reg, bitt) (((u32)&(reg) - 0x40000000) * 32 + (bitt) * 4 + 0x42000000)
@@ -33,7 +36,8 @@
 #define SEND_ONE SET_LOW NOP70 SET_HIGH NOP216 // low 1us, high 3us
 
 // hard code timing to read at the expected peak rather than basing it on the falling edge; sensitive, don't change timing
-#define RECEIVE_BIT NOP151 "ldr r1,[%3]\n" /* read port value */ "str r1,[%0]\n" /* store into array */ "add %0,%0,#4\n" /* increment array ptr */ NOP132
+#define RECEIVE_BIT NOP151 "ldr r1,[%3]\n" /* read port value / "str r1,[%0]\n" /* store into array / "add %0,%0,#4\n" /* increment array ptr 
+/ NOP132
 
 #define PIN 0
 #define VOL 63
@@ -112,17 +116,8 @@ static inline u32 n64poll() {
 	return data;
 }
 
-void setup() {
-	//Serial.begin(115200);
-	//while (!Serial);
-	pinMode(PIN, OUTPUT); // init pin
-}
-
 int n64umod;
-void loop() {
-	delay(10); // more error the shorter the time between n64polls, less time to buffer inputs too
-	n64data.raw32 = n64poll();
-
+static inline void ocarina() {
 	// TODO input buffer for n64mod buttons?;
 	// L, R = apply n64mod to 2nd, 3rd note pressed only? fixed harmony, toggle major/minor/interval?
 	int n64mod = n64data.du - n64data.dd + (n64data.dr ? 12 : 0) - (n64data.dl ? 12 : 0);
@@ -175,5 +170,34 @@ void loop() {
 	usbMIDI.send_now();
 	n64umod = n64mod;
 	olddata = n64data;
-	
+}
+*/
+
+MKB mkb;
+
+void setup() {
+	Serial.begin(115200);
+	//Serial2.begin(115200);
+	while (!Serial);
+	//while (!Serial2);
+	mkb.init();
+
+	//pinMode(PIN, OUTPUT); // init pin
+}
+
+void loop() {
+	/*Serial2.write(0xfd);
+	Serial2.write(6);
+	Serial2.write(0xcc);
+	Serial2.write(0xaa);
+	Serial2.write(255);
+	Serial2.write(0);
+	Serial2.write(255);
+	Serial2.write(0);*/
+	mkb.scan();
+	mkb.print();
+
+	/*delay(10); // more error the shorter the time between n64polls, less time to buffer inputs too
+	n64data.raw32 = n64poll();
+	ocarina();*/
 }
