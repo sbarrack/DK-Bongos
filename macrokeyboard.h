@@ -8,6 +8,14 @@
 #define KEY4 25
 #define KEY5 28
 
+#define KEY_MEDIA_BRIGHT_D 0xe46f
+#define KEY_MEDIA_BRIGHT_U 0xe470
+#define KEY_MEDIA_TOGGLE_CAM 0xe478
+#define KEY_MEDIA_MUSIC 0xe583
+#define KEY_MEDIA_MAIL 0xe58a
+#define KEY_MEDIA_CALC 0xe592
+#define KEY_MEDIA_THIS_PC 0xe594
+
 union Row {
 	u8 keys;
 	struct {
