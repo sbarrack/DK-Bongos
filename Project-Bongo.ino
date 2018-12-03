@@ -61,7 +61,7 @@ void loop() {
 		Serial1.print("Happy Birthday!");
 	}
 
-
+	// Caps lock indicator
 	if (keyboard_leds & (1 << 1)) {
 		digitalWriteFast(LED_BUILTIN, HIGH);
 	}
