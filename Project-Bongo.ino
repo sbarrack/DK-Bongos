@@ -1,3 +1,9 @@
+#define USB_LED_NUM_LOCK 0
+#define USB_LED_CAPS_LOCK 1
+#define USB_LED_SCROLL_LOCK 2
+#define USB_LED_COMPOSE 3
+#define USB_LED_KANA 4
+
 #include <Arduino.h>
 #include "types.h"
 #include "macrokeyboard.h"
@@ -60,9 +66,9 @@ void loop() {
 	else if (mkb.down.key5) {
 		Serial1.print("Happy Birthday!");
 	}
-
+	
 	// Caps lock indicator
-	if (keyboard_leds & (1 << 1)) {
+	if (keyboard_leds & (1 << USB_LED_CAPS_LOCK)) {
 		digitalWriteFast(LED_BUILTIN, HIGH);
 	}
 	else {
