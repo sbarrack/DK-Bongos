@@ -5,12 +5,13 @@
 MKB mkb;
 
 void setup() {
+	pinMode(LED_BUILTIN, OUTPUT);
 	Serial.begin(115200);
 	Serial1.begin(115200);
 
 	Mouse.screenSize(1920, 1080);
 	mkb.init();
-
+	
 	Serial.println("Ready");
 }
 
@@ -22,8 +23,8 @@ void loop() {
 	while (Serial.available() > 0) {
 		Serial1.write(Serial.read());
 	}*/
-
-	mkb.print();
+	
+	//mkb.print();
 	// open C:/User/Username/AppData/Roaming using win+r
 	if (mkb.down.key1) {
 		Keyboard.set_modifier(MODIFIERKEY_GUI);
@@ -58,6 +59,14 @@ void loop() {
 	// Happy Birthday! over bluetooth
 	else if (mkb.down.key5) {
 		Serial1.print("Happy Birthday!");
+	}
+
+
+	if (keyboard_leds & (1 << 1)) {
+		digitalWriteFast(LED_BUILTIN, HIGH);
+	}
+	else {
+		digitalWriteFast(LED_BUILTIN, LOW);
 	}
 	
 	delay(7);

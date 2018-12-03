@@ -2,11 +2,11 @@
 #include <Arduino.h>
 #include "types.h"
 
-#define KEY1 2
-#define KEY2 6
+#define KEY1 28
+#define KEY2 27
 #define KEY3 24
-#define KEY4 25
-#define KEY5 28
+#define KEY4 6
+#define KEY5 2
 
 #define KEY_MEDIA_BRIGHT_D 0xe46f
 #define KEY_MEDIA_BRIGHT_U 0xe470
