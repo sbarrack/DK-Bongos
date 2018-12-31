@@ -17,7 +17,7 @@ void WiiAttachment::identify() {
 	wire.write(0xFA);
 	wire.write(0);
 	while (wire.endTransmission());
-	MICROS(36);
+	MICROS(1036);
 	wire.requestFrom(CON, 6);
 	wire.readBytes(id, 6);
 }
@@ -26,7 +26,7 @@ void WiiAttachment::poll() {
 	wire.beginTransmission(CON);
 	wire.write(0);
 	while (wire.endTransmission());
-	MICROS(157);
+	MICROS(1157);
 	wire.requestFrom(CON, 6);
 	wire.readBytes(raw, 6);
 	updateReport();
