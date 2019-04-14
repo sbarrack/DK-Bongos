@@ -5,46 +5,52 @@ const float minDelta = F_CPU * 0.0000035;
 const float midDelta = F_CPU * 0.000002125;
 #endif
 
-u16 swapBytes(u8 a, u8 b) {
-    return ((u16) a << 8) | b;
+Controller::Controller(int pin)
+{
+    this->pin = pin;
+    bitmask = digitalPinToBitMask(pin);
+    portSetReg = portSetRegister(pin);
+    portClearReg = portClearRegister(pin);
+    portToggleReg = portToggleRegister(pin);
+    portInputReg = portInputRegister(pin);
+    portModeReg = portModeRegister(pin);
 }
 
-u16 Controller::getDevice() {
-    return swapBytes(initAck.raw8[0], initAck.raw8[1]);
-}
-
-u16 Controller::getButtons() {
-    return swapBytes(pollAck.raw8[0], pollAck.raw8[1]);
-}
-
-u16 Controller::getOriginalButtons() {
-    return swapBytes(originAck.raw8[0], originAck.raw8[1]);
-}
-
-void Controller::directWrite(u8 val) {
-    if (val) {
+void Controller::directWrite(u8 val)
+{
+    if (val)
+    {
         *portSetReg |= bitmask;
-    } else {
+    }
+    else
+    {
         *portClearReg |= bitmask;
     }
 }
 
-u8 Controller::directRead() {
+u8 Controller::directRead()
+{
     return *portInputReg & bitmask ? 1 : 0;
 }
 
-void Controller::directMode(u8 mode) {
-    if (mode == INPUT) {
+void Controller::directMode(u8 mode)
+{
+    if (mode == INPUT)
+    {
         *portModeReg &= ~bitmask;
-    } else if (mode == OUTPUT) {
+    }
+    else if (mode == OUTPUT)
+    {
         *portModeReg |= bitmask;
     }
 }
 
-int Controller::synAck(u8 *cmd, int outlen, u8 *buff, int inlen) {
+int Controller::synAck(u8 *cmd, int outlen, u8 *buff, int inlen)
+{
     directMode(OUTPUT);
-    int error = 0;
-    for (int i = 0; i < inlen; i++) {
+    int error = 1;
+    for (int i = 0; i < inlen; i++)
+    {
         buff[i] = 0;
     }
 #ifdef DOGE
@@ -54,8 +60,10 @@ int Controller::synAck(u8 *cmd, int outlen, u8 *buff, int inlen) {
 #endif
 
     cli();
-    for (int i = 0; i < outlen; i++) {
-        for (int j = 7; j >= 0; j--) {
+    for (int i = 0; i < outlen; i++)
+    {
+        for (int j = 7; j >= 0; j--)
+        {
             directWrite(LOW);
             delayMicroseconds(1);
             directWrite((cmd[i] >> j) & 0x1);
@@ -75,8 +83,10 @@ int Controller::synAck(u8 *cmd, int outlen, u8 *buff, int inlen) {
 
     directMode(INPUT);
 #ifdef RENA
-    for (int i = 0; i < inlen; i++) {
-        for (int j = 7; j >= 0; j--) {
+    for (int i = 0; i < inlen; i++)
+    {
+        for (int j = 7; j >= 0; j--)
+        {
             buff[i] |= directRead() << j;
             delayMicroseconds(4);
         }
@@ -84,10 +94,11 @@ int Controller::synAck(u8 *cmd, int outlen, u8 *buff, int inlen) {
 #elif defined(DOGE)
     while (directRead());
     times[0] = (ARM_DWT_CYCCNT);
-    for (int i = 1; i < marks; i++) {
-        while(!directRead());
+    for (int i = 1; i < marks; i++)
+    {
+        while (!directRead());
         times[i] = (ARM_DWT_CYCCNT);
-        while(directRead());
+        while (directRead());
     }
 #endif
     sei();
@@ -95,16 +106,20 @@ int Controller::synAck(u8 *cmd, int outlen, u8 *buff, int inlen) {
 #ifdef DOGE
     int delta = times[1] - times[0];
     bits[0] = delta < midDelta;
-    for (int i = 1; i < marks - 1; i++) {
+    for (int i = 1; i < marks - 1; i++)
+    {
         delta = times[i + 1] - times[i];
-        if (times[i + 1] < times[i]) {
-            delta = times[i + 1] - (s32) times[i];
+        if (times[i + 1] < times[i])
+        {
+            delta = times[i + 1] - (s32)times[i];
         }
         bits[i] = delta < maxDelta && delta < minDelta ? bits[i - 1] : !bits[i - 1];
     }
     int k = 0;
-    for (int i = 0; i < inlen; i++) {
-        for (int j = 7; j >= 0; j--) {
+    for (int i = 0; i < inlen; i++)
+    {
+        for (int j = 7; j >= 0; j--)
+        {
             buff[i] |= bits[k++] << j;
         }
     }
@@ -112,33 +127,61 @@ int Controller::synAck(u8 *cmd, int outlen, u8 *buff, int inlen) {
     return error;
 }
 
-int Controller::origin() {
-    u8 cmd[1] = { 0x41 };
-    return synAck(cmd, 1, originAck.raw8, 10);
-}
-
-int Controller::init(int timeout) {
+int Controller::plainInit(int timeout)
+{
 #ifdef DOGE
     ARM_DEMCR |= ARM_DEMCR_TRCENA;
     ARM_DWT_CTRL |= ARM_DWT_CTRL_CYCCNTENA;
 #endif
     int error;
-    u8 cmd[1] = { 0x00 };
-    while ((error = synAck(cmd, 1, initAck.raw8, 3)) && timeout-- > 0) {
+    u8 cmd[1] = {0x00};
+    while ((error = synAck(cmd, 1, initAck.raw8, 3)) && timeout-- > 0)
+    {
         delay(16);
     }
-    if (!error) {
+    return error;
+}
+
+int Controller::init(int timeout)
+{
+    return plainInit(timeout);
+}
+
+int Controller::handleError(int error)
+{
+    int temp = error;
+    if (error)
+    {
+        temp = init();
+    }
+    return temp;
+}
+
+int GCC::origin()
+{
+    u8 cmd[1] = {0x41};
+    return handleError(synAck(cmd, 1, originAck.raw8, 10));
+}
+
+int GCC::init(int timeout)
+{
+    int error = plainInit(timeout);
+    if (!error)
+    {
         delayMicroseconds(21);
         error = origin();
     }
     return error;
 }
 
-int Controller::poll() {
-    u8 cmd[3] = { 0x40, 0x03, 0x00 };
-    int error = synAck(cmd, 3, pollAck.raw8, 8);
-    if (error) {
-        error = init();
+int GCC::poll()
+{
+    u8 cmd[3] = {0x40, 0x03, 0x00};
+    int error = handleError(synAck(cmd, 3, pollAck.raw8, 8));
+    if (!error && pollAck.getOrigin)
+    {
+        delayMicroseconds(21);
+        error = origin();
     }
     return error;
 }

@@ -1,22 +1,24 @@
-#define RENA
-// #define DOGE
+// #define RENA
+#define DOGE
 #include "gc.hpp"
 
-Controller gcc(2);
+GCC gcc(2);
 
-void setup() {
-    // while (!Serial);
+void setup()
+{
+    while (!Serial);
     Serial.begin(115200);
 }
 
-void loop() {
+void loop()
+{
     gcc.init();
-    Serial.print(gcc.getDevice(), HEX);
+    Serial.print(gcc.initAck.device, HEX);
     Serial.print(" ");
-    Serial.println(gcc.getOriginalButtons(), HEX);
+    Serial.println(gcc.originAck.base.buttons, HEX);
     delay(8);
     gcc.poll();
-    Serial.println(gcc.getButtons(), HEX);
+    Serial.println(gcc.pollAck.buttons, HEX);
     delay(8);
     Serial.println();
 }
