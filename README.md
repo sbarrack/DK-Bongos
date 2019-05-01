@@ -1,25 +1,2 @@
-# ProjectBongo / master
-Goal: USB-HID, Bluetooth HID, and cross-platform support for all videogame controllers. This branch is written totally from scratch and I will probably deprecate the others after I finish the bongos (again).
-
-REDO:
-1. GameCube
-    * Bongos
-    * Controller
-2. N64 Controller
-3. Wii
-    * Nunchuck
-    * Guitar
-
-TODO:
-1. GameCube
-    * GBA Link Cable
-    * Keyboard
-1. GameBoy
-    * GB/C Link Cable
-    * GBA Link Cable
-2. N64 Transfer Pak
-2. Wiimote
-3. Switch
-    * Joycon
-    * Pro Controller
-4. DS Lite
+# Project-Bongo
+The goal of this project is to make the Donkey Kong Bongos a controller playable in Super Smash Bros using an Arduino Nano. For awhile, I used this repo for testing all sorts of things with other controllers and Arduinos. All that is available in branches other than `master` with various documentation on the Wiki. Will continue development on those ideas in other repos.
