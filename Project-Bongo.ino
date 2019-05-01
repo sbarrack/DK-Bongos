@@ -1,116 +1,196 @@
-/* timings http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.ddi0344k/Cfacfihf.html
- * ldr = 2
- * str = 2
- * b = 1 no branch, 2-4 otherwise
- * add = 1
- * sub = 1
- * nop = 1, 0 if not volatile
+/**
+ * If you're wondering what monstrosity this is, all the comments are
+ * stuff I borrowed from jermbox. This example is just blink but with
+ * my own, faster direct port manupulation. The constructor is beefy,
+ * because I didn't want to do an enourmous switch-case. I can now 
+ * move on with getting the bongos to work like they should.
  */
 
-#include <Arduino.h>
-#include "types.h"
+#include "direct_manip.hpp"
 
-// address for GPIO n64mode register of given pin
-#define GPIO_BITBAND_ADDR(reg, bitt) (((u32)&(reg) - 0x40000000) * 32 + (bitt) * 4 + 0x42000000)
+Pin pin(CORE_PIN13_BIT, CORE_PIN13_BITMASK, &CORE_PIN13_PORTREG, 
+    &CORE_PIN13_PORTSET, &CORE_PIN13_PORTCLEAR, &CORE_PIN13_PORTTOGGLE, 
+    &CORE_PIN13_PINREG, &CORE_PIN13_DDRREG, &CORE_PIN13_CONFIG);
 
-#define SET_LOW "str %4, [%2, 4]\n" // set the outport low
-#define SET_HIGH "str %4, [%2, 0]\n" // set the outport high
-#define LOOP "1:\n" "subs r2,#1\n" "bne 1b\n"
-// 1us @ 72MHz = 72
-#define NOP1 "nop\n"
-#define NOP2 NOP1 NOP1
-#define NOP4 NOP2 NOP2
-#define NOP31 "ldr r2,=9\n" LOOP
-#define NOP36 "ldr r2,=10\n" LOOP
-#define NOP70 "ldr r2,=22\n" LOOP
-#define NOP216 "ldr r2,=70\n" LOOP NOP2
+// // Period length is 5 us
+// // 72 MHz / 1000000 * 2.5 us = 180
+// #define CYCLES_HALF F_CPU / 400000
 
-#define SEND_ZERO SET_LOW NOP216 SET_HIGH NOP70 // low 3us, high 1us
-#define SEND_ONE SET_LOW NOP70 SET_HIGH NOP216 // low 1us, high 3us
+// // Period length is 5 us
+// // 72 MHz / 1000000 * 10 us = 720
+// #define CYCLES_TWO F_CPU / 100000
 
-#define RECEIVE_BIT "ldr r1,[%3]\nstr r1,[%0]\nadd %0,%0,#4\n"
-#define RECEIVE_8_32ndBIT NOP4 "ldr r3,=8\n2:\n" RECEIVE_BIT "subs r3,#1\nbne 2b\n"
+// bool passedAll = false;
 
-#define PIN 0
-#define LEN 200
+// uint32_t fallTime = 0;
+// uint32_t buffer = 0;
+// uint8_t bitsRead = 0;
 
-union GCReport {
-	u8 raw[8];
-	u32 raw32[2];
-	u64 raw64;
-	struct {
-		u8 rt;
-		u8 lt;
-		u8 cy;
-		u8 cx;
-		u8 sy;
-		u8 sx;
+void setup()
+{
+    // cli();
+    // pinMode(PIN, INPUT);
 
-		u8 dl : 1;
-		u8 dr : 1;
-		u8 dd : 1;
-		u8 du : 1;
-		u8 z : 1;
-		u8 r : 1;
-		u8 l : 1;
-		u8 : 1;
+    // ARM_DEMCR |= ARM_DEMCR_TRCENA;
+    // ARM_DWT_CTRL |= ARM_DWT_CTRL_CYCCNTENA;
 
-		u8 a : 1;
-		u8 b : 1;
-		u8 x : 1;
-		u8 y : 1;
-		u8 start : 1;
-		u8 : 3;
-	};
-} gcdata;
-
-static inline void n64poll() {
-	static u32 n64modeReg = GPIO_BITBAND_ADDR(CORE_PIN0_PORTREG, CORE_PIN0_BIT);
-	u32 buffer[LEN];
-
-	u8 oldSREG = SREG;
-	cli();
-	__asm__ volatile (
-		"ldr r0,=0\n"
-		"ldr r1,=1\n"
-		"str r0,[%1]\n" // pin to output n64mode
-
-		// 0x40 gcc poll
-		SEND_ZERO SEND_ONE SEND_ZERO SEND_ZERO
-		SEND_ZERO SEND_ZERO SEND_ZERO SEND_ZERO
-		// 0x03 full length
-		SEND_ZERO SEND_ZERO SEND_ZERO SEND_ZERO
-		SEND_ZERO SEND_ZERO SEND_ONE SEND_ONE
-		// 0x00 rumble disabled
-		SEND_ZERO SEND_ZERO SEND_ZERO SEND_ZERO
-		SEND_ZERO SEND_ZERO SEND_ONE SEND_ZERO
-		SEND_ONE // stop
-
-		// 1 nib, last superbit should be start button
-		RECEIVE_8_32ndBIT RECEIVE_8_32ndBIT RECEIVE_8_32ndBIT RECEIVE_8_32ndBIT
-		RECEIVE_8_32ndBIT RECEIVE_8_32ndBIT RECEIVE_8_32ndBIT RECEIVE_8_32ndBIT
-		RECEIVE_8_32ndBIT RECEIVE_8_32ndBIT RECEIVE_8_32ndBIT RECEIVE_8_32ndBIT
-		RECEIVE_8_32ndBIT RECEIVE_8_32ndBIT RECEIVE_8_32ndBIT RECEIVE_8_32ndBIT
-		
-		:
-		: "r" (buffer), "r" (n64modeReg), "r" (&CORE_PIN0_PORTSET), "r" (&CORE_PIN0_PINREG), "r" (CORE_PIN0_BITMASK)
-		: "r0", "r1", "r2", "r3"
-	);
-	SREG = oldSREG;
-
-	for (int i = 0; i < LEN; i++) {
-		Serial.print(((buffer[i] & CORE_PIN0_BITMASK) >> CORE_PIN0_BIT) & 1, BIN);
-	}
+    while (!Serial);
+    Serial.begin(115200);
+    pin.directMode(OUTPUT);
+    pin.directWrite(HIGH);
 }
 
-void setup() {
-	Serial.begin(115200);
-	while (!Serial);
-	pinMode(PIN, OUTPUT);
+void loop()
+{
+    Serial.println(pin.directRead());
+    delay_us(127500);
+    pin.directToggle();
+    delay_us(127500);
+    
+//     while (1)
+//     {
+//         // Wait for falling edge
+//         while (digitalReadFast(PIN) == HIGH)
+//             ;
+//         uint32_t newFallTime = ARM_DWT_CYCCNT;
+//         if (newFallTime - fallTime > CYCLES_TWO)
+//         {
+//             // start of new command
+//             buffer = 0;
+//             bitsRead = 0;
+//         }
+//         fallTime = newFallTime;
+
+//         // Wait for rising edge
+//         while (digitalReadFast(PIN) == LOW)
+//             ;
+//         uint32_t cycles = ARM_DWT_CYCCNT - fallTime;
+//         buffer = (buffer << 1) | (cycles > CYCLES_HALF ? 0 : 1);
+//         bitsRead++;
+//         if (bitsRead == 9)
+//         {
+//             if (buffer & 0x1)
+//             {
+//                 handleShort(buffer >> 1);
+//             }
+//         }
+//         else if (bitsRead == 25)
+//         {
+//             if (buffer & 0x1)
+//             {
+//                 handleLong(buffer >> 1);
+//             }
+//         }
+//     }
+// }
+
+// void handleShort(uint32_t buffer)
+// {
+//     if (buffer == 0x0)
+//     {
+//         respondWithId();
+//     }
+//     else if (buffer == 0x41)
+//     {
+//         respondWithOrigins();
+//     }
+// }
+
+// void handleLong(uint32_t buffer)
+// {
+//     // the bottom two bits of the command control rumble.
+//     // mask them out cuz we don't care, but for reference:
+//     // XXXXXX00, brake off, motor off
+//     // XXXXXX01, brake off, motor on
+//     // XXXXXX10, brake on, motor off
+//     // XXXXXX11, brake on, motor on? idk
+//     buffer &= 0xFFFFFFFC;
+
+//     if (buffer == 0x00400000)
+//     {
+//         respondWithCalibration();
+//     }
+//     else
+//     {
+//         // Technically, we should check for the right commands
+//         // before responding, but we don't actually know what
+//         // all the commands are
+//         if (!passedAll)
+//         {
+//             passedAll = true;
+//         }
+//         respondWithCalibration();
+//     }
+// }
+
+// void respondWithId()
+// {
+//     pinMode(PIN, OUTPUT);
+//     digitalWriteFast(PIN, HIGH);
+
+//     // 0x09 0x00 0x00 STOP
+//     send0();send0();send0();send0();send1();send0();send0();send1();
+//     send0();send0();send0();send0();send0();send0();send0();send0();
+//     send0();send0();send0();send0();send0();send0();send0();send0();
+//     send1();
+
+//     pinMode(PIN, INPUT);
+// }
+
+// void respondWithOrigins()
+// {
+//     pinMode(PIN, OUTPUT);
+//     digitalWriteFast(PIN, HIGH);
+
+//     // 0x00 0x80 0x80 0x80 0x80 0x80 0x00 0x00 0x02 0x02 STOP
+//     send0();send0();send0();send0();send0();send0();send0();send0();
+//     send1();send0();send0();send0();send0();send0();send0();send0();
+//     send1();send0();send0();send0();send0();send0();send0();send0();
+//     send1();send0();send0();send0();send0();send0();send0();send0();
+//     send1();send0();send0();send0();send0();send0();send0();send0();
+//     send1();send0();send0();send0();send0();send0();send0();send0();
+//     send0();send0();send0();send0();send0();send0();send0();send0();
+//     send0();send0();send0();send0();send0();send0();send0();send0();
+//     send0();send0();send0();send0();send0();send0();send1();send0();
+//     send0();send0();send0();send0();send0();send0();send1();send0();
+//     send1();
+
+//     pinMode(PIN, INPUT);
+// }
+
+// void respondWithCalibration()
+// {
+//     pinMode(PIN, OUTPUT);
+//     digitalWriteFast(PIN, HIGH);
+
+//     // 0x00 0x80 0x80 0x80 0x80 0x80 0x00 0x00 STOP
+//     send0();send0();send0();send0();send0();send0();send0();send0();
+//     send1();send0();send0();send0();send0();send0();send0();send0();
+//     send1();send0();send0();send0();send0();send0();send0();send0();
+//     send1();send0();send0();send0();send0();send0();send0();send0();
+//     send1();send0();send0();send0();send0();send0();send0();send0();
+//     send1();send0();send0();send0();send0();send0();send0();send0();
+//     send0();send0();send0();send0();send0();send0();send0();send0();
+//     send0();send0();send0();send0();send0();send0();send0();send0();
+//     send1();
+
+//     pinMode(PIN, INPUT);
 }
 
-void loop() {
-	delay(2000);
-	n64poll();
-	Serial.println("\n~~~~~~( New poll )~~~~~~");
-}
+// // pinMode must be set to OUTPUT
+// void send0()
+// {
+//     digitalWriteFast(PIN, LOW);
+//     delayMicroseconds(3);
+//     digitalWriteFast(PIN, HIGH);
+//     delayMicroseconds(1);
+// }
+
+// // pinMode must be set to OUTPUT
+// void send1()
+// {
+//     digitalWriteFast(PIN, LOW);
+//     delayMicroseconds(1);
+//     digitalWriteFast(PIN, HIGH);
+//     delayMicroseconds(3);
+// }
