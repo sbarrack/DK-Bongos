@@ -1,9 +1,9 @@
-#include <Nintendo.h>
+#include "GamecubeAPI.h"
 
 CGamecubeController gcc(7);
 CGamecubeConsole gc(8);
 
-void yield() {}
+// void yield() {}
 
 void setup()
 {
