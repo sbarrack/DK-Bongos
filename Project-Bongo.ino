@@ -1,30 +1,33 @@
-#include "GamecubeAPI.h"
-
-CGamecubeController gcc(7);
-CGamecubeConsole gc(8);
-Gamecube_Report_t rep;
-unsigned long timeNow, timeMark, timeMarkOld;
+#include <SPI.h>
+#include <SD.h>
 
 void setup()
 {
-    rep = defaultGamecubeData.report;
+    Serial.begin(9600);
+    while (!Serial);
+
+    Serial.print("Loading card... ");
+    if (!SD.begin()) {
+        Serial.println("FAILED");
+        return;
+    }
+    Serial.println("DONE");
+
+    Serial.print("Opening hi.txt... ");
+    File hi = SD.open("hi.txt");
+    if (hi) {
+        Serial.println("DONE\r\nPrinting contents...");
+        while (hi.available()) {
+            Serial.write(hi.read());
+        }
+        hi.close();
+    } else {
+        Serial.println("FAILED");
+    }
+    Serial.println("END");
 }
 
 void loop()
 {
-    for (;;) {
-        timeNow = micros();
 
-        // if (dTime >= .5 frames || overflow < -.5 frames)
-        if (timeNow >= timeMark || timeNow < timeMarkOld) {
-            timeMarkOld = timeMark;
-            timeMark += 8333;
-
-            gcc.read();
-            rep = gcc.getReport();
-            rep.xAxis = rep.yAxis = rep.cxAxis = rep.cyAxis = 0x80;
-        }
-
-        gc.write(rep);
-    }
 }
