@@ -3,6 +3,7 @@
 
 void setup()
 {
+    File hi;
     Serial.begin(9600);
     while (!Serial);
 
@@ -13,8 +14,24 @@ void setup()
     }
     Serial.println("DONE");
 
+    Serial.print("Looking for hi.txt... ");
+    if (SD.exists("hi.txt")) {
+        Serial.print("FOUND\r\nDeleting hi.txt... ");
+        if (SD.remove("hi.txt")) {
+            Serial.println("DONE");
+        } else {
+            Serial.println("FAILED");
+        }
+    } else {
+        Serial.print("MISSING\r\nCreating hi.txt... ");
+        hi = SD.open("hi.txt", FILE_WRITE);
+        hi.println("YAY!");
+        hi.close();
+        Serial.println("DONE");
+    }
+
     Serial.print("Opening hi.txt... ");
-    File hi = SD.open("hi.txt");
+    hi = SD.open("hi.txt");
     if (hi) {
         Serial.println("DONE\r\nPrinting contents...");
         while (hi.available()) {
@@ -24,6 +41,7 @@ void setup()
     } else {
         Serial.println("FAILED");
     }
+
     Serial.println("END");
 }
 
