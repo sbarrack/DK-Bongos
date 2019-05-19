@@ -1,7 +1,8 @@
 #include <GamecubeAPI.h>
 
-CGamecubeController gcc(7); // have more controllers
-CGamecubeConsole gc(8);
+// 2-9,23-26
+CGamecubeConsole gc(2);
+CGamecubeController gcc(3); // have more controllers
 
 void setup()
 {
