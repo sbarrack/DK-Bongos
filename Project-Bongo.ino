@@ -1,18 +1,20 @@
 
-uint8_t buffer[8];
+#define BUFF_SIZE 8
+
+uint8_t buffer[BUFF_SIZE];
 
 void setup() {
     Serial1.begin(115200, SERIAL_8N1);
     // Serial1.setTimeout(1000);
-    while (!Serial1);
+    // while (!Serial1);
 }
 
 void loop() {
-    if (Serial1.available() >= (int)sizeof(buffer)) {
-        Serial1.readBytes(buffer, sizeof(buffer));
+    if (Serial1.available() >= BUFF_SIZE) {
+        Serial1.readBytes(buffer, BUFF_SIZE);
     }
-    if (Serial1.availableForWrite() >= (int)sizeof(buffer)) {
-        Serial1.write(buffer, sizeof(buffer));
+    if (Serial1.availableForWrite() >= BUFF_SIZE) {
+        Serial1.write(buffer, BUFF_SIZE);
         Serial1.flush();
     }
 }
