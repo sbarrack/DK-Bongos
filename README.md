@@ -1,2 +1,7 @@
 # Project-Bongo
-The goal of this project is to make the Donkey Kong Bongos a controller playable in Super Smash Bros using an Arduino Nano. For awhile, I used this repo for testing all sorts of things with other controllers and Arduinos. All that is available in branches other than `master` with various documentation on the Wiki. Will continue development on those ideas in other repos.
+This project has two branches (master and uno-nano). Two Arduinos are required for it to work:
+1. a Teensy 3.2 or 3.5 with code from the master branch
+2. an Arduino Uno/Nano with code from the uno-nano branch  
+A wiring diagram will be included soon:tm:.  
+
+The goal of this project is to make bongos playable in any situation outside Jungle Beats or Donkey Konga without modifying the controller itself.  
