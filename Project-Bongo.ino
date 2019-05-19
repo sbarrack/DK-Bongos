@@ -4,8 +4,6 @@
 CGamecubeConsole gc(2);
 CGamecubeController gcc(3); // have more controllers
 
-Gamecube_Report_t out = defaultGamecubeData.report;
-
 void setup()
 {
     Serial.begin(115200);
@@ -17,7 +15,7 @@ void loop()
     auto in = gcc.getReport();
     Serial.write(in.raw8, sizeof(in.raw8));
     if (Serial.available() >= (int)sizeof(in.raw8)) {
-        Serial.readBytes(out.raw8, sizeof(out.raw8));
+        Serial.readBytes(in.raw8, sizeof(in.raw8));
     }
-    gc.write(out);
+    gc.write(in);
 }
