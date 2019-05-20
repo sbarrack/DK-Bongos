@@ -20,7 +20,9 @@ void loop()
 
     // send
     Wire.beginTransmission(I2C_ADDR);
-    Wire.write(out.raw8, sizeof(out.raw8));
+    // bongos only need 2 bytes tops
+    Wire.write(out.raw8[0]);
+    Wire.write(out.raw8[7]);
     Wire.endTransmission();
 
     // get
