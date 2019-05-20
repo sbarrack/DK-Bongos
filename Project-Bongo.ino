@@ -7,8 +7,6 @@ CGamecubeConsole gc(2);
 CGamecubeController gcc(3); // have more controllers
 Gamecube_Report_t out, in = defaultGamecubeData.report;
 
-int timeout;
-
 void setup()
 {
     Wire.setClock(400000); // fast mode
