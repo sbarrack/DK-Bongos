@@ -1,8 +1,6 @@
+#include <Wire.h>
 #include <GamecubeAPI.h>
 
-#define BUFF_SIZE 8
-
-// 2-9,23-26
 CGamecubeConsole gc(2);
 CGamecubeController gcc(3); // have more controllers
 
@@ -10,21 +8,28 @@ Gamecube_Report_t out, in = defaultGamecubeData.report;
 
 void setup()
 {
-    Serial.begin(115200); // SERIAL_8N1
-    // Serial.setTimeout(1000);
-    // while (!Serial);
+    Wire.setClock(400000); // fast mode
+    Wire.begin(8); // slave
+
+    Wire.onRequest(send);
+    Wire.onReceive(get);
 }
 
 void loop()
 {
-    if (Serial.availableForWrite() >= BUFF_SIZE) {
-        gcc.read();
-        out = gcc.getReport();
-        Serial.write(out.raw8, BUFF_SIZE);
-        Serial.flush();
-    }
-    if (Serial.available() >= BUFF_SIZE) {
-        Serial.readBytes(in.raw8, BUFF_SIZE);
-    }
+    gcc.read();
+    out = gcc.getReport();
     gc.write(in);
+}
+
+void send() {
+    Wire.write(out.raw8, sizeof(out.raw8));
+}
+
+void get() {
+    if (Wire.available() >= (long long)sizeof(in.raw8)) {
+        for (int i = 0; i < sizeof(in.raw8); i++) {
+            in.raw8[i] = Wire.read();
+        }
+    }
 }
