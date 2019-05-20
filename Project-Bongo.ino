@@ -14,7 +14,7 @@ void setup()
 }
 
 void loop()
-{    
+{
     gcc.read();
     out = gcc.getReport();
 
