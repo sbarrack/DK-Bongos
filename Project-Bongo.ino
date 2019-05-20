@@ -17,9 +17,11 @@ void loop() {
 }
 
 void get() {
-    
+    for (int i = 0; Wire.available() && i < sizeof(buffer); i++) {
+        buffer[i] = Wire.read();
+    }
 }
 
 void send() {
-
+    Wire.write(buffer, sizeof(buffer));
 }
