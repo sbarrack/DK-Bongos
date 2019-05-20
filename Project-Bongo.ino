@@ -16,8 +16,8 @@ void loop() {
 
 }
 
-void get() {
-    for (int i = 0; Wire.available() && i < sizeof(buffer); i++) {
+void get(int c) {
+    for (int i = 0; i < c; i++) {
         buffer[i] = Wire.read();
     }
 }
