@@ -1,21 +1,25 @@
-// #include <Arudino.h>
+#include <Wire.h>
 
-#define BUFF_SIZE 8
+#define I2C_ADDR 8
 
-uint8_t buffer[BUFF_SIZE];
+uint8_t buffer[8];
 
 void setup() {
-    Serial1.begin(115200, SERIAL_8N1);
-    // Serial1.setTimeout(1000);
-    // while (!Serial1);
+    Wire.setClock(400000); // fast mode
+    Wire.begin(I2C_ADDR); // slave
+
+    Wire.onReceive(get);
+    Wire.onRequest(send);
 }
 
 void loop() {
-    if (Serial1.available() >= BUFF_SIZE) {
-        Serial1.readBytes(buffer, BUFF_SIZE);
-    }
-    if (Serial1.availableForWrite() >= BUFF_SIZE) {
-        Serial1.write(buffer, BUFF_SIZE);
-        Serial1.flush();
-    }
+
+}
+
+void get() {
+    
+}
+
+void send() {
+
 }
