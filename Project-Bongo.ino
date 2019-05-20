@@ -78,7 +78,7 @@ void loop()
 {
     // normal bongos
     rep.raw[0] = bongo.buttons;
-    rep.raw[8] = bongo.mic;
+    rep.raw[7] = bongo.mic;
     rep.raw16[1] = rep.raw16[2] = 0x8080;
 }
 
