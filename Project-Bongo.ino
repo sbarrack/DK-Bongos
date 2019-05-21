@@ -3,12 +3,12 @@
 
 #define I2C_ADDR 8
 
-#define FILE_NAME "hi.txt"
-const uint8_t *text = (const uint8_t *)"YAY!\r\n\\(^u^)/\r\n";
-char buff[15];
-
 SdFs sd;
 FsFile file;
+
+struct {
+    uint8_t init : 1;
+} SDerrors; // error if nonzero
 
 union {
     uint8_t raw[8];
@@ -84,24 +84,22 @@ void setup()
     Serial.begin(115200);
     while (!Serial);
 
-    if (!sd.begin(SdioConfig(FIFO_SDIO)))
-    {
-        sd.errorHalt("Init error");
-    }
+    SDerrors.init = sd.begin(SdioConfig(FIFO_SDIO))) ? 0 : 1;
 
-    if (sd.exists(FILE_NAME)) {
-        file = sd.open(FILE_NAME, O_READ);
-        file.read(buff, 15);
-        Serial.write(buff, 15);
-        file.close();
-        sd.remove(FILE_NAME);
-    } else {
-        Serial.print("touch ");
-        Serial.println(FILE_NAME);
-        file = sd.open(FILE_NAME, O_WRITE | O_CREAT);
-        file.write(text, 15);
-        file.close();
-    }
+    // // SD card I/O
+    // if (sd.exists(FILE_NAME)) {
+    //     file = sd.open(FILE_NAME, O_READ);
+    //     file.read(buff, 15);
+    //     Serial.write(buff, 15);
+    //     file.close();
+    //     sd.remove(FILE_NAME);
+    // } else {
+    //     Serial.print("touch ");
+    //     Serial.println(FILE_NAME);
+    //     file = sd.open(FILE_NAME, O_WRITE | O_CREAT);
+    //     file.write(text, 15);
+    //     file.close();
+    // }
 }
 
 void loop()
@@ -113,10 +111,10 @@ void loop()
         // rep.raw[7] = bongo.mic;
         // rep.raw16[1] = rep.raw16[2] = 0x8080;
 
-        if (!sd.card()->isBusy())
-        {
-            // do SD stuff
-        }
+        // if (!sd.card()->isBusy())
+        // {
+        //     // do SD stuff
+        // }
     }
 }
 
