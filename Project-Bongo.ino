@@ -9,27 +9,31 @@ Gamecube_Report_t out, in = defaultGamecubeData.report;
 
 void setup()
 {
+    // Serial.begin(115200);
+    // while(!Serial);
+
     Wire.setClock(400000); // fast mode
     Wire.begin(); // master
 }
 
 void loop()
 {
-    gcc.read();
-    out = gcc.getReport();
+    for (;;) {
+        gcc.read();
+        out = gcc.getReport();
 
-    // send
-    Wire.beginTransmission(I2C_ADDR);
-    // bongos only need 2 bytes tops
-    Wire.write(out.raw8[0]);
-    Wire.write(out.raw8[7]);
-    Wire.endTransmission();
+        // send
+        Wire.beginTransmission(I2C_ADDR);
+        Wire.write(out.raw8[0]); // buttons
+        Wire.write(out.raw8[7]); // mic
+        Wire.endTransmission(); // never fails ;)
+        
+        // get
+        int n = Wire.requestFrom(I2C_ADDR, sizeof(in.raw8));
+        for (int i = 0; i < n; i++) {
+            in.raw8[i] = Wire.read();
+        }
 
-    // get
-    Wire.requestFrom(I2C_ADDR, sizeof(in.raw8));
-    for (int i = 0; Wire.available() && i < sizeof(in.raw8); i++) {
-        in.raw8[i] = Wire.read();
+        gc.write(in);
     }
-
-    gc.write(in);
 }
