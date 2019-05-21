@@ -1,6 +1,14 @@
 #include <Wire.h>
+#include "SdFat.h"
 
 #define I2C_ADDR 8
+
+#define FILE_NAME "hi.txt"
+const uint8_t *text = (const uint8_t *)"YAY!\r\n\\(^u^)/\r\n";
+char buff[15];
+
+SdFs sd;
+FsFile file;
 
 union {
     uint8_t raw[8];
@@ -67,20 +75,52 @@ union {
 
 void setup()
 {
-    Wire.setClock(400000); // fast mode
-    Wire.begin(I2C_ADDR);  // slave
+    // Wire.setClock(400000); // fast mode
+    // Wire.begin(I2C_ADDR);  // slave
 
-    Wire.onReceive(get);
-    Wire.onRequest(send);
+    // Wire.onReceive(get);
+    // Wire.onRequest(send);
+
+    Serial.begin(115200);
+    while (!Serial);
+
+    if (!sd.begin(SdioConfig(FIFO_SDIO)))
+    {
+        sd.errorHalt("Init error");
+    }
+
+    if (sd.exists(FILE_NAME)) {
+        file = sd.open(FILE_NAME, O_READ);
+        file.read(buff, 15);
+        Serial.write(buff, 15);
+        file.close();
+        sd.remove(FILE_NAME);
+    } else {
+        Serial.print("touch ");
+        Serial.println(FILE_NAME);
+        file = sd.open(FILE_NAME, O_WRITE | O_CREAT);
+        file.write(text, 15);
+        file.close();
+    }
 }
 
 void loop()
 {
-    // normal bongos
-    rep.raw[0] = bongo.buttons;
-    rep.raw[7] = bongo.mic;
-    rep.raw16[1] = rep.raw16[2] = 0x8080;
+    for (;;)
+    { // faster when we don't yield()
+        // normal bongos
+        // rep.raw[0] = bongo.buttons;
+        // rep.raw[7] = bongo.mic;
+        // rep.raw16[1] = rep.raw16[2] = 0x8080;
+
+        if (!sd.card()->isBusy())
+        {
+            // do SD stuff
+        }
+    }
 }
+
+void yield() {} // get rid of the most useless function ever
 
 void get(int c)
 {
