@@ -9,8 +9,8 @@ Gamecube_Report_t out, in = defaultGamecubeData.report;
 
 void setup()
 {
-    // Serial.begin(115200);
-    // while(!Serial);
+    Serial.begin(115200);
+    while(!Serial);
 
     Wire.setClock(400000); // fast mode
     Wire.begin(); // master
