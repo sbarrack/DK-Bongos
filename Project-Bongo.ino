@@ -13,13 +13,14 @@ struct
     uint8_t : 7;
 } SDerrors; // error if nonzero
 
-union{
+union {
     // 8 bytes of datareport that we get from the controller
     uint8_t raw[8];
     uint16_t raw16[4];
     uint32_t raw32[2];
 
-    struct {
+    struct
+    {
         // first data byte (bitfields are sorted in LSB order)
         uint8_t a : 1;
         uint8_t b : 1;
@@ -77,7 +78,8 @@ uint8_t wiiExtID[6];
 union {
     uint8_t raw[6];
 
-    struct {
+    struct
+    {
         uint8_t sx;
         uint8_t sy;
 
@@ -97,9 +99,8 @@ union {
 } wiiExtRep;
 
 void setup()
-{    
+{
     Serial.begin(115200);
-    while (!Serial);
 
     // nano
     Wire.setClock(400000); // fast mode
@@ -135,11 +136,11 @@ void loop()
     while (Wire1.endTransmission());
     delayMicroseconds(149);
     int n = Wire1.requestFrom(WII_EXT_ADDR, sizeof(wiiExtRep.raw));
-    for (int i = 0; i < n; i++) {
+    for (int i = 0; i < n; i++)
+    {
         wiiExtRep.raw[i] = Wire1.read();
     }
-    
-    // fill rep
+
     // wii ext
     rep.sx = wiiExtRep.nunchuck.sx;
     rep.sy = wiiExtRep.nunchuck.sy;
@@ -168,13 +169,11 @@ void get(int c)
 
 void send()
 {
-    // Wire.write(rep.raw, sizeof(rep.raw));
-    for (int i = 0; i < (int)sizeof(rep.raw); i++) {
-        Wire.write(rep.raw[i]);
-    }
+    Wire.write(rep.raw, sizeof(rep.raw));
 }
 
-void idWiiExt() {
+void idWiiExt()
+{
     delayMicroseconds(43);
     Wire1.beginTransmission(WII_EXT_ADDR);
     Wire1.write(0xfa);
@@ -182,20 +181,25 @@ void idWiiExt() {
     while (Wire1.endTransmission());
     delayMicroseconds(38);
     int n = Wire1.requestFrom(WII_EXT_ADDR, sizeof(wiiExtID));
-    for (int i = 0; i < n; i++) {
+    for (int i = 0; i < n; i++)
+    {
         wiiExtID[i] = Wire1.read();
     }
 }
 
-void testFileSD() {
-    if (sd.exists("hi.txt")) {
+void testFileSD()
+{
+    if (sd.exists("hi.txt"))
+    {
         file = sd.open("hi.txt", O_READ);
         uint8_t buff[15];
         file.read(buff, 15);
         Serial.write(buff, 15);
         file.close();
         sd.remove("hi.txt");
-    } else {
+    }
+    else
+    {
         Serial.println("touch hi.txt");
         file = sd.open("hi.txt", O_WRITE | O_CREAT);
         file.write("YAY!\r\n\\(^u^)/\r\n", 15);
