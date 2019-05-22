@@ -19,6 +19,13 @@ union {
     uint16_t raw16[4];
     uint32_t raw32[2];
 
+    struct {
+        uint8_t : 8;
+
+        uint8_t dpad : 4;
+        uint8_t : 4;
+    };
+
     struct
     {
         // first data byte (bitfields are sorted in LSB order)
@@ -57,6 +64,7 @@ union {
     {
         union {
             uint8_t buttons;
+
             struct
             {
                 // bongo w/ start facing in
@@ -72,6 +80,40 @@ union {
         uint8_t mic;
     };
 } bongo;
+
+union {
+    uint8_t raw[4];
+    uint16_t raw16[2];
+    uint32_t raw32;
+
+    struct {
+        uint8_t dpad : 4;
+        uint8_t : 4;
+    };
+
+    struct {
+        uint8_t dr : 1;
+        uint8_t dl : 1;
+        uint8_t dd : 1;
+        uint8_t du : 1;
+        uint8_t start : 1;
+        uint8_t z : 1;
+        uint8_t b : 1;
+        uint8_t a : 1;
+
+        uint8_t cr : 1;
+        uint8_t cl : 1;
+        uint8_t cd : 1;
+        uint8_t cu : 1;
+        uint8_t r : 1;
+        uint8_t l : 1;
+        uint8_t : 1;
+        uint8_t reset : 1; // l + r + start
+
+        int8_t sx;
+        int8_t sy;
+    };
+} n64c;
 
 // bytes are backwards cause unions are little endian in c and we don't got time for that!
 enum WiiExtFull : uint64_t {
@@ -223,17 +265,24 @@ void loop()
         wiiExtRep.raw[i] = Wire1.read();
     }
 
-    // wii ext
-    if (wiiExtID.type == Nunchuck) {
-        rep.sx = wiiExtRep.nunchuck.sx;
-        rep.sy = wiiExtRep.nunchuck.sy;
-        rep.z = !wiiExtRep.nunchuck.z;
-        rep.du = !wiiExtRep.nunchuck.c;
-    } // TODO add other cases
     // normal bongos
     rep.raw[0] = bongo.buttons;
     rep.raw[7] = bongo.mic;
-    rep.raw16[2] = 0x8080;
+
+    // wii ext
+    if (wiiExtID.type == Nunchuck) {
+        rep.cx = wiiExtRep.nunchuck.sx;
+        rep.cy = wiiExtRep.nunchuck.sy;
+        rep.lt = wiiExtRep.nunchuck.z ? 0x20 : 0x80;
+    } // TODO add other cases
+
+    // n64c
+    rep.sx = n64c.sx - 0x80; // convert the signed to unsigned
+    rep.sy = n64c.sy - 0x80;
+    rep.l = n64c.l;
+    rep.r = n64c.r;
+    rep.z = n64c.z;
+    rep.dpad = n64c.dpad;
 
     // if (!sd.card()->isBusy())
     // {
@@ -245,9 +294,15 @@ void yield() {}
 
 void get(int c)
 {
-    for (int i = 0; i < c; i++)
+    int n = c >= 2 ? sizeof(bongo.raw) : c;
+    for (int i = 0; i < n; i++)
     {
         bongo.raw[i] = Wire.read();
+    }
+    n = c - n;
+    for (int i = 0; i < n; i++)
+    {
+        n64c.raw[i] = Wire.read();
     }
 }
 
