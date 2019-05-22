@@ -1,11 +1,14 @@
 #include <Wire.h>
 #include <GamecubeAPI.h>
+#include <N64API.h>
 
 #define I2C_ADDR 8
 
 CGamecubeConsole gc(2);
-CGamecubeController gcc(3); // have more controllers
+CGamecubeController gcc(3); // have more controllers?
+CN64Controller n64c(4);
 Gamecube_Report_t out, in = defaultGamecubeData.report;
+N64_Report_t out2;
 
 void setup()
 {
@@ -19,13 +22,21 @@ void setup()
 void loop()
 {
     for (;;) {
+        // gc
         gcc.read();
         out = gcc.getReport();
 
+        // n64
+        n64c.read();
+        out2 = n64c.getReport();
+
         // send
         Wire.beginTransmission(I2C_ADDR);
+        // gc
         Wire.write(out.raw8[0]); // buttons
         Wire.write(out.raw8[7]); // mic
+        // n64
+        Wire.write(out2.raw8, 4);
         Wire.endTransmission(); // never fails ;)
         
         // get
