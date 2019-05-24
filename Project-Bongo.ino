@@ -13,7 +13,7 @@ N64_Report_t out2;
 void setup()
 {
     Serial.begin(115200);
-    while(!Serial);
+    // while(!Serial);
 
     Wire.setClock(400000); // fast mode
     Wire.begin(); // master
@@ -29,6 +29,7 @@ void loop()
         // n64
         n64c.read();
         out2 = n64c.getReport();
+        Serial.println(out2.raw32[0], HEX);
 
         // send
         Wire.beginTransmission(I2C_ADDR);
@@ -38,7 +39,7 @@ void loop()
         // n64
         Wire.write(out2.raw8, 4);
         Wire.endTransmission(); // never fails ;)
-        
+
         // get
         int n = Wire.requestFrom(I2C_ADDR, sizeof(in.raw8));
         for (int i = 0; i < n; i++) {
