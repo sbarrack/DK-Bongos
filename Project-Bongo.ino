@@ -1,8 +1,8 @@
 #include <Wire.h>
 #include "SdFat.h"
 
-#define I2C_ADDR 8
 #define WII_EXT_ADDR 0x52
+#define I2C_ADDR WII_EXT_ADDR
 
 SdFs sd;
 FsFile file;
@@ -225,69 +225,79 @@ void setup()
     Serial.begin(115200);
     // while (!Serial);
 
-    // nano
-    Wire.setClock(400000); // fast mode
-    Wire.begin(I2C_ADDR);  // slave
-    Wire.onReceive(get);
-    Wire.onRequest(send);
+    // // nano
+    // Wire.setClock(400000); // fast mode
+    // Wire.begin(I2C_ADDR);  // slave
+    // Wire.onReceive(get);
+    // Wire.onRequest(send);
 
-    // wii ext
-    Wire1.setClock(400000);
-    Wire1.begin(); // master
-    // init
-    Wire1.beginTransmission(WII_EXT_ADDR);
-    Wire1.write(0xf0); // @ 0x(4)a400f0
-    Wire1.write(0x55); // write 0x55
-    while (Wire1.endTransmission());
-    delayMicroseconds(38); // min delay
-    Wire1.beginTransmission(WII_EXT_ADDR);
-    Wire1.write(0xfb);
-    Wire1.write(0);
-    while (Wire1.endTransmission());
-    idWiiExt();
+    // // wii ext
+    // Wire1.setClock(400000);
+    // Wire1.begin(); // master
+    // // init
+    // Wire1.beginTransmission(WII_EXT_ADDR);
+    // Wire1.write(0xf0); // @ 0x(4)a400f0
+    // Wire1.write(0x55); // write 0x55
+    // while (Wire1.endTransmission());
+    // delayMicroseconds(38); // min delay
+    // Wire1.beginTransmission(WII_EXT_ADDR);
+    // Wire1.write(0xfb);
+    // Wire1.write(0);
+    // while (Wire1.endTransmission());
+    // idWiiExt();
 
-    SDerrors.init = !sd.begin(SdioConfig(FIFO_SDIO));
-    // testFileSD();
+    // SDerrors.init = !sd.begin(SdioConfig(FIFO_SDIO));
+    // // testFileSD();
+
+    Serial1.begin(115200);
+
 }
 
 void loop()
 {
-    // poll wii ext
-    delayMicroseconds(42);
-    Wire1.beginTransmission(WII_EXT_ADDR);
-    Wire1.write(0); // @ addr 0x(4)a40000
-                    // read
-    while (Wire1.endTransmission());
-    delayMicroseconds(149);
-    int n = Wire1.requestFrom(WII_EXT_ADDR, sizeof(wiiExtRep.raw));
-    for (int i = 0; i < n; i++)
-    {
-        wiiExtRep.raw[i] = Wire1.read();
+    while (Serial.available()) {
+        Serial1.write(Serial.read());
+    }
+    while (Serial1.available()) {
+        Serial.write(Serial1.read());
     }
 
-    // normal bongos
-    rep.raw[0] = bongo.buttons;
-    rep.raw[7] = bongo.mic;
-
-    // wii ext
-    if (wiiExtID.type == Nunchuck) {
-        rep.cx = wiiExtRep.nunchuck.sx;
-        rep.cy = wiiExtRep.nunchuck.sy;
-        rep.lt = wiiExtRep.nunchuck.z ? 0x20 : 0x80;
-    } // TODO add other cases
-
-    // n64c
-    rep.sx = n64c.sx - 0x80; // convert the signed to unsigned
-    rep.sy = n64c.sy - 0x80;
-    rep.l = n64c.l;
-    rep.r = n64c.r;
-    rep.z = n64c.z;
-    rep.dpad = n64c.dpad;
-
-    // if (!sd.card()->isBusy())
+    // // poll wii ext
+    // delayMicroseconds(42);
+    // Wire1.beginTransmission(WII_EXT_ADDR);
+    // Wire1.write(0); // @ addr 0x(4)a40000
+    //                 // read
+    // while (Wire1.endTransmission());
+    // delayMicroseconds(149);
+    // int n = Wire1.requestFrom(WII_EXT_ADDR, sizeof(wiiExtRep.raw));
+    // for (int i = 0; i < n; i++)
     // {
-    //     // do SD stuff
+    //     wiiExtRep.raw[i] = Wire1.read();
     // }
+
+    // // normal bongos
+    // rep.raw[0] = bongo.buttons;
+    // rep.raw[7] = bongo.mic;
+
+    // // wii ext
+    // if (wiiExtID.type == Nunchuck) {
+    //     rep.cx = wiiExtRep.nunchuck.sx;
+    //     rep.cy = wiiExtRep.nunchuck.sy;
+    //     rep.lt = wiiExtRep.nunchuck.z ? 0x20 : 0x80;
+    // } // TODO add other cases
+
+    // // n64c
+    // rep.sx = n64c.sx - 0x80; // convert the signed to unsigned
+    // rep.sy = n64c.sy - 0x80;
+    // rep.l = n64c.l;
+    // rep.r = n64c.r;
+    // rep.z = n64c.z;
+    // rep.dpad = n64c.dpad;
+
+    // // if (!sd.card()->isBusy())
+    // // {
+    // //     // do SD stuff
+    // // }
 }
 
 void yield() {}
