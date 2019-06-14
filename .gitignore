@@ -4,4 +4,4 @@
 !.vscode/launch.json
 !.vscode/extensions.json
 
-*.txt
+#!.vscode/c_cpp_properties.json

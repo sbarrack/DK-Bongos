@@ -3,6 +3,7 @@ This project focuses on making the DK Bongos a viable GameCube controller.
 
 ## Table of Contents
 * [Features](#Features)
+  * [Planned](#Planned)
 * [Requirements](#Requirements)
 * [Materials](#Materials)
 * [Installation](#Installation)
@@ -17,8 +18,6 @@ This project focuses on making the DK Bongos a viable GameCube controller.
 * Playable in every game ever made
 * Does not require homebrew
 * Non-intrusive installation
-
-^ [Top](#Project-Bongo)
 
 ### Planned
 * Haptic feedback
