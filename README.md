@@ -1,8 +1,69 @@
 # Project-Bongo
-This project has two branches (master and uno-nano). Two Arduinos are required for it to work:
-1. a Teensy 3.2 or 3.5 with code from the master branch
-2. an Arduino Uno/Nano with code from the uno-nano branch  
+This project focuses on making the DK Bongos a viable GameCube controller.  
 
-A wiring diagram will be included soon:tm:.  
+## Table of Contents
+* [Features](#Features)
+* [Requirements](#Requirements)
+* [Materials](#Materials)
+* [Installation](#Installation)
+* [Use](#Use)
 
-The goal of this project is to make bongos playable in any situation outside Jungle Beats or Donkey Konga without modifying the controller itself.  
+## Features
+* Compatible with:
+  * GameCube
+  * Wii
+  * Any GameCube controller adapter
+* Completely customizeable controls
+* Playable in every game ever made
+* Does not require homebrew
+* Non-intrusive installation
+
+^ [Top](#Project-Bongo)
+
+### Planned
+* Haptic feedback
+* Programmable RGB LEDs
+* Sound
+
+^ [Top](#Project-Bongo)
+
+## Requirements
+* Computer with Arduino IDE
+* Bongo controller
+* GameCube controller<sup>1</sup>
+* Gaming system
+  * GameCube
+  * Wii
+  * Emulator<sup>2</sup>
+* SD/SDXC Card<sup>3</sup>
+* Soldering kit
+
+<sup>1</sup> *Required to use the custom control feature. Otherwise, the controller will use the default control profile.*  
+<sup>2</sup> *Use a GameCube controller adapter.*  
+<sup>3</sup> *Recommended size soon&trade;. Otherwise, the controller will use the default control profile.*  
+
+Guides for soldering and formatting an SD card linked here soon&trade;.  
+
+^ [Top](#Project-Bongo)
+
+## Materials
+* 1 Arduino Uno/Nano
+* 1 GameCube controller extension cable
+* 2 1 kOhm resistors
+* 1 SD card adapter for Arduino
+* 1 Protoboard
+* 1 Enclosure
+
+Links soon&trade;  
+
+^ [Top](#Project-Bongo)
+
+## Installation
+Soon&trade;  
+
+^ [Top](#Project-Bongo)
+
+## Use
+Soon&trade;  
+
+^ [Top](#Project-Bongo)
