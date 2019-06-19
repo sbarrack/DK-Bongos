@@ -1,0 +1,24 @@
+{
+    "configurations": [
+        {
+            "name": "Arduino",
+            "includePath": [
+                "${workspaceFolder}/**",
+                "${env:USERPROFILE}/Documents/Arduino/libraries/**",
+                "${env:ProgramFiles(x86)}/Arduino/hardware/arduino/avr/cores/**",
+                "${env:ProgramFiles(x86)}/Arduino/hardware/tools/avr/avr/include/**",
+                "${env:ProgramFiles(x86)}/Arduino/hardware/arduino/avr/variants/standard"
+            ],
+            "defines": [
+                "_DEBUG",
+                "UNICODE",
+                "_UNICODE"
+            ],
+            "compilerPath": "/usr/bin/gcc",
+            "cStandard": "c11",
+            "cppStandard": "c++17",
+            "intelliSenseMode": "clang-x64"
+        }
+    ],
+    "version": 4
+}
