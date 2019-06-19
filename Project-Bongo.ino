@@ -255,6 +255,7 @@ void setup()
 
 void loop()
 {
+<<<<<<< HEAD
     while (Serial.available()) {
         Serial1.write(Serial.read());
     }
@@ -354,4 +355,88 @@ void testFileSD()
         file.write("YAY!\r\n\\(^u^)/\r\n", 15);
         file.close();
     }
+=======
+  // Try to read the controller data
+  if (N64Controller.read())
+  {
+    // Print Controller information
+    auto status = N64Controller.getStatus();
+    auto report = N64Controller.getReport();
+    print_n64_report(report, status);
+    delay(100);
+  }
+  else
+  {
+    // Add debounce if reading failed
+    Serial.println(F("Error reading N64 controller."));
+    digitalWrite(pinLed, HIGH);
+    delay(1000);
+  }
+  digitalWrite(pinLed, LOW);
+}
+
+void print_n64_report(N64_Report_t &n64_report, N64_Status_t &n64_status)
+{
+  // Print device information
+  Serial.print(F("Device: "));
+  switch (n64_status.device) {
+    case NINTENDO_DEVICE_N64_NONE:
+      Serial.println(F("No N64 Controller found!"));
+      break;
+    case NINTENDO_DEVICE_N64_WIRED:
+      Serial.println(F("Original Nintendo N64 Controller"));
+      break;
+
+    default:
+      Serial.print(F("Unknown "));
+      Serial.println(n64_status.device, HEX);
+      break;
+  }
+
+  // Prints the raw data from the controller
+  Serial.println();
+  Serial.println(F("Printing N64 controller report:"));
+
+  Serial.print(F("A:\t"));
+  Serial.println(n64_report.a);
+
+  Serial.print(F("B:\t"));
+  Serial.println(n64_report.b);
+
+  Serial.print(F("Z:\t"));
+  Serial.println(n64_report.z);
+
+  Serial.print(F("Start:\t"));
+  Serial.println(n64_report.start);
+
+  Serial.print(F("Dup:\t"));
+  Serial.println(n64_report.dup);
+  Serial.print(F("Ddown:\t"));
+  Serial.println(n64_report.ddown);
+  Serial.print(F("Dleft:\t"));
+  Serial.println(n64_report.dleft);
+  Serial.print(F("Dright:\t"));
+  Serial.println(n64_report.dright);
+
+  Serial.print(F("L:\t"));
+  Serial.println(n64_report.l);
+  Serial.print(F("R:\t"));
+  Serial.println(n64_report.r);
+
+  Serial.print(F("Cup:\t"));
+  Serial.println(n64_report.cup);
+  Serial.print(F("Cdown:\t"));
+  Serial.println(n64_report.cdown);
+  Serial.print(F("Cleft:\t"));
+  Serial.println(n64_report.cleft);
+  Serial.print(F("Cright:\t"));
+  Serial.println(n64_report.cright);
+
+  Serial.print(F("xAxis:\t"));
+  Serial.println(n64_report.xAxis, DEC);
+  Serial.print(F("yAxis:\t"));
+  Serial.println(n64_report.yAxis, DEC);
+
+  Serial.println();
+>>>>>>> teensy
 }
