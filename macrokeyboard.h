@@ -1,39 +1,31 @@
 #pragma once
 #include <Arduino.h>
+#include "types.h"
 
-#ifndef MACRO_KEYS
-#define MACRO_KEYS 1 // any more than 6 keys should use a matrix instead
-#endif // !MACRO_KEYS
-#ifndef KEY1
-#define KEY1 2
-#endif // !KEY1
-#ifndef KEY2
-#define KEY2 24
-#endif // !KEY2
-#ifndef KEY3
-#define KEY3 6
-#endif // !KEY3
-#ifndef KEY4
-#define KEY4 27
-#endif // !KEY4
-#ifndef KEY5
-#define KEY5 28
-#endif // !KEY5
-#ifndef KEY6
-#define KEY6 33
-#endif // !KEY6
+#define KEY1 28
+#define KEY2 27
+#define KEY3 24
+#define KEY4 6
+#define KEY5 2
+
+#define KEY_MEDIA_BRIGHT_D 0xe46f
+#define KEY_MEDIA_BRIGHT_U 0xe470
+#define KEY_MEDIA_TOGGLE_CAM 0xe478
+#define KEY_MEDIA_MUSIC 0xe583
+#define KEY_MEDIA_MAIL 0xe58a
+#define KEY_MEDIA_CALC 0xe592
+#define KEY_MEDIA_THIS_PC 0xe594
 
 union Row {
-	uint8_t keys;
+	u8 keys;
 	struct {
 		// LSB order
-		uint8_t key1 : 1;
-		uint8_t key2 : 1;
-		uint8_t key3 : 1;
-		uint8_t key4 : 1;
-		uint8_t key5 : 1;
-		uint8_t key6 : 1;
-		//uint8_t : 2;
+		u8 key1 : 1;
+		u8 key2 : 1;
+		u8 key3 : 1;
+		u8 key4 : 1;
+		u8 key5 : 1;
+		//u8 : 3;
 	};
 };
 
@@ -42,9 +34,7 @@ public:
 	void init();
 	void scan();
 	void print();
-
+	Row down, held, up; // will tell you if a key is pressed, held, or released
 private:
 	Row buffer[2];
-	Row down, held, up; // will tell you if a key is pressed, held, or released
-
 };
