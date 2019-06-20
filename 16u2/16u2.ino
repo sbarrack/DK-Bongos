@@ -1,14 +1,15 @@
-// led logic is inverted, pins are different than 328p!
 // https://github.com/NicoHood/HoodLoader2/wiki/4-Pin-Header
-#include <HID-Project.h>
 #include <GamecubeAPI.h>
+#include <HID-Project.h>
 
+#define START 0xff
+const int maxlen = sizeof(Gamecube_Report_t) + 1;
 Gamecube_Report_t report = defaultGamecubeData.report;
 
 void setup()
 {
-    Serial.begin(115200);  // USB
-    Serial1.begin(115200); // 328p
+    // Serial.begin(115200);  // USB
+    Serial1.begin(2000000); // 328p
     Gamepad.begin();
 }
 
@@ -16,17 +17,21 @@ void loop()
 {
     for (;;)
     {
-        if (Serial1.available() > sizeof(report))
+        int c = Serial1.available();
+        if (c >= maxlen)
         {
-            while (Serial.read() != 0xFF);
-            // Serial1.readBytes(report.raw8, sizeof(report));
-            for (int i = 0; i < sizeof(report); i++)
-            {
-                report.raw8[i] = Serial1.read();
-                Serial.print(report.raw8[i], HEX);
-                Serial.print(" ");
+            uint8_t bite = 0;
+            while (bite != START && c-- > 1) {
+                bite = Serial1.read();
             }
-            Serial.println();
+            if (bite == START) {
+                for (int i = 0; i < c; i++) {
+                    report.raw8[i] = Serial1.read();
+                    // Serial.print(report.raw8[i], HEX);
+                    // Serial.print(" ");
+                }
+                // Serial.println();
+            }
         }
 
         // The two control sticks

@@ -1,13 +1,14 @@
 #include <GamecubeAPI.h>
 
+#define START 0xff
+const int maxlen = sizeof(Gamecube_Report_t) + 1;
 CGamecubeController controller(2);
-
 Gamecube_Report_t report = defaultGamecubeData.report;
 
 void setup()
 {
     pinMode(LED_BUILTIN, OUTPUT);
-    Serial.begin(115200);
+    Serial.begin(2000000);
 }
 
 void loop()
@@ -16,25 +17,13 @@ void loop()
     {
         digitalWrite(LED_BUILTIN, controller.read() ? HIGH : LOW);
         report = controller.getReport();
-        if (report.a)
+        controller.setRumble(report.a);
+        if (Serial.availableForWrite() >= maxlen)
         {
-            controller.setRumble(true);
-        }
-        else
-        {
-            controller.setRumble(false);
-        }
-        Serial.flush();
-        if (Serial.availableForWrite() > sizeof(report))
-        {
-            Serial.write(0xFF);
+            Serial.write(START);
+            Serial.write(report.raw8, sizeof(report));
             Serial.flush();
-            // Serial.write(report.raw8, sizeof(report));
-            for (int i = 0; i < sizeof(report); i++)
-            {
-                Serial.write(report.raw8[i]);
-                Serial.flush();
-            }
         }
+        delay(8);
     }
 }
