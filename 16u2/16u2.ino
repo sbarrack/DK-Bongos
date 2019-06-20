@@ -1,4 +1,3 @@
-// https://github.com/NicoHood/HoodLoader2/wiki/4-Pin-Header
 #include <GamecubeAPI.h>
 #include <HID-Project.h>
 
@@ -30,28 +29,16 @@ void loop()
                 for (int i = 0; i < c; i++)
                 {
                     report.raw8[i] = Serial1.read();
-                    // Serial.print(report.raw8[i], HEX);
-                    // Serial.print(" ");
                 }
-                // Serial.println();
             }
         }
 
-        // The two control sticks
         Gamepad.xAxis((report.xAxis - 0x80) << 8);
-        Gamepad.yAxis(~(report.yAxis - 0x80) << 8); // y stick needs to be inverted
+        Gamepad.yAxis(~(report.yAxis - 0x80) << 8);
         Gamepad.rxAxis((report.cxAxis - 0x80) << 8);
         Gamepad.ryAxis((report.cyAxis - 0x80) << 8);
-
-        // you can merge L/R (PS3 controller uses this methode too)
-        // or you can also seperate the triggers
-        // for Windows calibration comment out the l/r buttons below
-        // (because l/r triggers the wizard)
-        Gamepad.zAxis(abs(report.left - report.right) - 0x80);
-        // Gamepad.zAxis(report.left - 0x80);
-        // Gamepad.rzAxis(report.right - 0x80);
-
-        // D-Pad:
+        Gamepad.zAxis(report.left - 0x80);
+        Gamepad.rzAxis(report.right - 0x80);
         if (report.dup && report.dright)
         {
             Gamepad.dPad1(GAMEPAD_DPAD_UP_RIGHT);
@@ -88,15 +75,7 @@ void loop()
         {
             Gamepad.dPad1(GAMEPAD_DPAD_CENTERED);
         }
-
-        // 8 Gamecube buttons
         Gamepad.buttons(0x00UL | (report.buttons0 & 0x1F) | ((report.buttons1 & 0x70) << 1));
-
-        // You could add a zero value correction here or a minimum
-        // for the left/right shoulder triggers but the os can
-        // (and should) calibrate controllers very well.
-
-        // Write the information to the PC
         Gamepad.write();
     }
 }
