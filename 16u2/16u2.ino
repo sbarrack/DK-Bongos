@@ -15,8 +15,9 @@ void setup()
 void loop()
 {
     if (Serial1.available() >= sizeof(report)) {
-        Serial1.readBytes(report.raw8, sizeof(report));
+        // Serial1.readBytes(report.raw8, sizeof(report));
         for (int i = 0; i < sizeof(report); i++) {
+            report.raw8[i] = Serial1.read();
             Serial.print(report.raw8[i], HEX);
             Serial.print(" ");
         }
