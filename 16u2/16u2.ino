@@ -21,11 +21,14 @@ void loop()
         if (c >= maxlen)
         {
             uint8_t bite = 0;
-            while (bite != START && c-- > 1) {
+            while (bite != START && c-- > 1)
+            {
                 bite = Serial1.read();
             }
-            if (bite == START) {
-                for (int i = 0; i < c; i++) {
+            if (bite == START)
+            {
+                for (int i = 0; i < c; i++)
+                {
                     report.raw8[i] = Serial1.read();
                     // Serial.print(report.raw8[i], HEX);
                     // Serial.print(" ");
@@ -44,9 +47,9 @@ void loop()
         // or you can also seperate the triggers
         // for Windows calibration comment out the l/r buttons below
         // (because l/r triggers the wizard)
-        //Gamepad.zAxis(abs(report.left - report.right) - 0x80);
-        Gamepad.zAxis(report.left - 0x80);
-        Gamepad.rzAxis(report.right - 0x80);
+        Gamepad.zAxis(abs(report.left - report.right) - 0x80);
+        // Gamepad.zAxis(report.left - 0x80);
+        // Gamepad.rzAxis(report.right - 0x80);
 
         // D-Pad:
         if (report.dup && report.dright)
@@ -80,6 +83,10 @@ void loop()
         else if (report.dleft)
         {
             Gamepad.dPad1(GAMEPAD_DPAD_LEFT);
+        }
+        else
+        {
+            Gamepad.dPad1(GAMEPAD_DPAD_CENTERED);
         }
 
         // 8 Gamecube buttons
