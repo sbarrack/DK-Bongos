@@ -17,13 +17,12 @@ void loop()
     {
         digitalWrite(LED_BUILTIN, controller.read() ? HIGH : LOW);
         report = controller.getReport();
-        controller.setRumble(report.a);
+        // controller.setRumble(report.a);
         if (Serial.availableForWrite() >= maxlen)
         {
             Serial.write(START);
             Serial.write(report.raw8, sizeof(report));
             Serial.flush();
         }
-        delay(8);
     }
 }

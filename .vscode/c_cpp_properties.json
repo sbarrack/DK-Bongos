@@ -10,7 +10,8 @@
                 "${env:LOCALAPPDATA}/Arduino15/**"
             ],
             "defines": [
-                "USBCON"
+                "USBCON",
+                "UBRR1H"
             ],
             "cStandard": "c11",
             "cppStandard": "c++17",
