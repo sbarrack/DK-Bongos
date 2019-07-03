@@ -6,36 +6,35 @@
 // use O_ flags and not FILE_ flags
 // use sdformatter.exe
 
-#define START 0xff
-const int maxlen = sizeof(Gamecube_Report_t) + 1;
-CGamecubeController controller(2);
+#define STOP_BYTE 0xff
 Gamecube_Report_t report = defaultGamecubeData.report;
+CGamecubeController controller(2);
 
 void setup()
 {
     pinMode(LED_BUILTIN, OUTPUT);
-    Serial.begin(2000000);
+    Serial.begin(2000000); // 16u2
 
-    // use "continue;" instead of break
+    // use "continue;" instead of break, use break to exit
     for (;;)
     {
         if (controller.read())
         {
-            digitalWrite(LED_BUILTIN, HIGH);
-
-            report = controller.getReport();
-            if (Serial.availableForWrite() >= maxlen)
-            {
-                Serial.write(START);
-                Serial.write(report.raw8, sizeof(report));
-                Serial.flush();
-            }
-        }
-        else
-        {
-            digitalWrite(LED_BUILTIN, LOW);
+            digitalWrite(LED_BUILTIN, gccToSerial());
         }
     }
 }
 
 void loop() {}
+
+bool gccToSerial() {
+    int temp = 0;
+    report = controller.getReport();
+    if (Serial.availableForWrite() > sizeof(report))
+    {
+        temp = Serial.write(report.raw8, sizeof(report));
+        Serial.write(STOP_BYTE);
+        Serial.flush();
+    }
+    return temp == sizeof(report);
+}
