@@ -10,10 +10,7 @@ void setup()
     // Serial.begin(115200);  // USB
     Serial1.begin(2000000); // 328p
     Gamepad.begin();
-}
 
-void loop()
-{
     for (;;)
     {
         int c = Serial1.available();
@@ -31,6 +28,14 @@ void loop()
                     report.raw8[i] = Serial1.read();
                 }
             }
+            else
+            {
+                continue;
+            }
+        }
+        else
+        {
+            continue;
         }
 
         Gamepad.xAxis((report.xAxis - 0x80) << 8);
@@ -79,3 +84,5 @@ void loop()
         Gamepad.write();
     }
 }
+
+void loop() {}
