@@ -1,9 +1,8 @@
 #include <GamecubeAPI.h>
-// #include "SdFat.h"
-// store files as binary
-// use 0_ flags and not FILE_ flags
-// #define ENABLE_DEDICATED_SPI 1
-// #define SPI_DRIVER_SELECT 0
+#include "SdFat.h" // SdFat-beta
+
+// store data in machine-readable files (binary)
+// use O_ flags and not FILE_ flags
 // use sdformatter.exe
 
 #define START 0xff
