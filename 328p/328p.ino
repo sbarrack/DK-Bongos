@@ -12,7 +12,6 @@ CGamecubeController controller(2);
 
 void setup()
 {
-    pinMode(LED_BUILTIN, OUTPUT);
     Serial.begin(2000000); // 16u2
 
     // use "continue;" instead of break, use break to exit
@@ -20,7 +19,7 @@ void setup()
     {
         if (controller.read())
         {
-            digitalWrite(LED_BUILTIN, gccToSerial());
+            gccToSerial();
         }
     }
 }

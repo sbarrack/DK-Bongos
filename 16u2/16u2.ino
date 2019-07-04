@@ -54,7 +54,7 @@ void gccToHid()
     Gamepad.dPad1(hat);
 
     Gamepad.xAxis(report.xAxis - 0x80 << 8);
-    Gamepad.yAxis(~(report.yAxis - 0x80) << 8);
+    Gamepad.yAxis(~report.yAxis - 0x80 << 8);
     Gamepad.rxAxis(report.cxAxis - 0x80 << 8);
     Gamepad.ryAxis(report.cyAxis - 0x80 << 8);
     Gamepad.zAxis(report.left - 0x80);
