@@ -9,31 +9,19 @@
 #define STOP_BYTE 0xff
 Gamecube_Report_t report = defaultGamecubeData.report;
 CGamecubeController controller(2);
+CGamecubeConsole console(3);
 
 void setup()
 {
-    Serial.begin(2000000); // 16u2
+    // Serial.begin(2000000);
 
     // use "continue;" instead of break, use break to exit
+    // eventually, switch to a makefile instead of IDE
     for (;;)
     {
-        if (controller.read())
-        {
-            gccToSerial();
-        }
+        // TODO minify nintendo library in this project
+	// bongo stuff here
     }
 }
 
 void loop() {}
-
-bool gccToSerial() {
-    int temp = 0;
-    report = controller.getReport();
-    if (Serial.availableForWrite() > sizeof(report))
-    {
-        temp = Serial.write(report.raw8, sizeof(report));
-        Serial.write(STOP_BYTE);
-        Serial.flush();
-    }
-    return temp == sizeof(report);
-}
