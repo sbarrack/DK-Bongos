@@ -1,6 +1,4 @@
-/*
-Copyright (c) 2014-2016 NicoHood
-See the readme for credit to other people.
+/* Copyright (c) 2014-2016 NicoHood
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -18,172 +16,51 @@ FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
 AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-THE SOFTWARE.
-*/
-
+THE SOFTWARE. */
 #include "bongos.h"
 
-//================================================================================
-// Gamecube/N64 I/O functions
-//================================================================================
-
-uint8_t gc_n64_send_get(const uint8_t pin, uint8_t* command, const uint8_t commandLen,
-    uint8_t* report, const uint8_t reportLen){
-    // get the port mask and the pointers to the in/out/mode registers
+uint8_t gcTransceive(const uint8_t pin, uint8_t* command, const uint8_t cmdLen, uint8_t* buffer, const uint8_t buffLen) {
     uint8_t bitMask = digitalPinToBitMask(pin);
     uint8_t port = digitalPinToPort(pin);
     volatile uint8_t* modePort = portModeRegister(port);
     volatile uint8_t* outPort = portOutputRegister(port);
     volatile uint8_t* inPort = portInputRegister(port);
 
-    // don't want interrupts getting in the way
     uint8_t oldSREG = SREG;
     cli();
 
-    // send the command
-    gc_n64_send(command, commandLen, modePort, outPort, bitMask);
+    transmit(command, cmdLen, modePort, outPort, bitMask);
+    uint8_t temp = receive(buffer, buffLen, modePort, outPort, inPort, bitMask);
 
-    // read in data
-    uint8_t receivedBytes = gc_n64_get(report, reportLen, modePort, outPort, inPort, bitMask);
-
-    // end of time sensitive code
     SREG = oldSREG;
-
-    // return received length
-    return receivedBytes;
+    return temp;
 }
 
-
-// nop definitions, placed here so the header/user
-// doesnt see/use this because it is %[nop] specific
-#define nopManual(n) nopn ## n
-#define nopn0 // (0 % 3)
-#define nopn1 "nop\n" // (1 % 3)
-#define nopn2 "nop\nnop\n" // (2 % 3)
-#define nopn3 nopn0 // (3 % 3)
-#define nopn4 nopn1 //..
-#define nopn5 nopn2
-#define nopn6 nopn0
-#define nopn7 nopn1
+#define nopManual(n) nopn ## n // n % 3 nops
+#define nopn1 "nop\n"
+#define nopn2 "nop\nnop\n"
+#define nopn4 nopn1
 #define nopn8 nopn2
-#define nopn9 nopn0
 #define nopn10 nopn1
-#define nopn11 nopn2
-#define nopn12 nopn0
-#define nopn13 nopn1
+#define nopn12
 #define nopn14 nopn2
-#define nopn15 nopn0
-#define nopn16 nopn1
-#define nopn17 nopn2
-#define nopn18 nopn0
-#define nopn19 nopn1
-#define nopn20 nopn2
-#define nopn21 nopn0
-#define nopn22 nopn1
-#define nopn23 nopn2
-#define nopn24 nopn0
-#define nopn25 nopn1
-#define nopn26 nopn2
-#define nopn27 nopn0
-#define nopn28 nopn1
-#define nopn29 nopn2
-#define nopn30 nopn0
-#define nopn31 nopn1
-#define nopn32 nopn2
-#define nopn33 nopn0
-#define nopn34 nopn1
-#define nopn35 nopn2
-#define nopn36 nopn0
-#define nopn37 nopn1
-#define nopn38 nopn2
-#define nopn39 nopn0
-#define nopn40 nopn1
-#define nopn41 nopn2
-#define nopn42 nopn0
+#define nopn30
 #define nopn43 nopn1
-#define nopn44 nopn2
-#define nopn45 nopn0
-#define nopn46 nopn1
-#define nopn47 nopn2
-#define nopn48 nopn0
-#define nopn49 nopn1
-#define nopn50 nopn2
-#define nopn51 nopn0
-#define nopn52 nopn1
-#define nopn53 nopn2
-#define nopn54 nopn0
-#define nopn55 nopn1
-#define nopn56 nopn2
-#define nopn57 nopn0
-#define nopn58 nopn1
-#define nopn59 nopn2
-#define nopn60 nopn0
-#define nopn61 nopn1
-#define nopn62 nopn2
-#define nopn63 nopn0
-#define nopn64 nopn1
-#define nopn65 nopn2
-#define nopn66 nopn0
-#define nopn67 nopn1
-#define nopn68 nopn2
-#define nopn69 nopn0
-#define nopn70 nopn1
-#define nopn71 nopn2
-#define nopn72 nopn0
-#define nopn73 nopn1
-#define nopn74 nopn2
-#define nopn75 nopn0
-#define nopn76 nopn1
-#define nopn77 nopn2
-#define nopn78 nopn0
-#define nopn79 nopn1
-#define nopn80 nopn2
-#define nopn81 nopn0
-#define nopn82 nopn1
-#define nopn83 nopn2
-#define nopn84 nopn0
-#define nopn85 nopn1
-#define nopn86 nopn2
-#define nopn87 nopn0
-#define nopn88 nopn1
-#define nopn89 nopn2
-#define nopn90 nopn0
-#define nopn91 nopn1
-#define nopn92 nopn2
-#define nopn93 nopn0
-#define nopn94 nopn1
-#define nopn95 nopn2
-#define nopn96 nopn0
-#define nopn97 nopn1
-#define nopn98 nopn2
-#define nopn99 nopn0
+/* only 3 or less nops don't get optimized out guarenteed https://www.avrfreaks.net/forum/problems-delaying-nops-avr-gcc
+(1) ldi + floor(N - 1 / 3) * ((1) dec + (2) brne passes) + (1) dec + (1) brne fails + N % 3 = N nops */
+#define nop_block(id, N) "ldi %[nop], (" #N "/3)\n.L%=_nop_loop" #id ":\ndec %[nop]\nbrne .L%=_nop_loop" #id "\n" nopManual(N)
 
-#define nop_reg "%[nop]" // in this sketch we named the register like this
-#define nop_block(id, N) /* nops have to be >=3 in order to work*/ \
-"ldi " nop_reg ", (" #N "/3)\n" /* (1) ldi, start */ \
-".L%=_nop_loop" #id ":\n" /* + ((N-1) * (1) dec + (2) brne), (N-1) loops */ \
-"dec " nop_reg "\n" /* + (1) dec + (1) brne, last loop */ \
-"brne .L%=_nop_loop" #id "\n" /* --> (N * 3) nops */ \
-nopManual(N) /* N % 3 manual nops */
+void gcTransmit(const uint8_t* buff, uint8_t len, volatile uint8_t* modePort, volatile uint8_t* outPort, uint8_t bitMask) {
+    *outPort |= bitMask; // high b/c idle high
+    *modePort |= bitMask; // output
 
-/**
-* This sends the given byte sequence to the controller
-* length must be at least 1
-*/
-void gc_n64_send(const uint8_t* buff, uint8_t len,
-    volatile uint8_t* modePort, volatile uint8_t* outPort, uint8_t bitMask)
-{
-    // set pin to output, default high
-    *outPort |= bitMask;
-    *modePort |= bitMask;
-
-    // temporary register values used as "clobbers"
+    // clobbers
     register uint8_t bitCount;
     register uint8_t data;
     register uint8_t nop;
 
     asm volatile (
-        "; Start of gc_n64_send assembly\n"
+        ";gcTransmit()\n"
 
         // passed in to this block are:
         // the %a[buff] register is the buffer pointer
@@ -292,22 +169,14 @@ void gc_n64_send(const uint8_t* buff, uint8_t len,
         [low] "r" (*outPort & ~bitMask) // this works because we turn interrupts off
 
         // no clobbers
-        ); // end of asm volatile
+    );
 }
 
-/**
-* Read bytes from the gamecube controller
-* listen for the expected bytes of data back from the controller and
-* and pack it into the buff
-*/
-uint8_t gc_n64_get(uint8_t* buff, uint8_t len,
-    volatile uint8_t* modePort, volatile uint8_t* outPort, volatile uint8_t * inPort, uint8_t bitMask)
-{
-    // prepare pin for input with pullup
-    *modePort &= ~bitMask;
+uint8_t gcReceive(uint8_t* buff, uint8_t len, volatile uint8_t* modePort, volatile uint8_t* outPort, volatile uint8_t * inPort, uint8_t bitMask) {
+    *modePort &= ~bitMask; // input w/pullup
     *outPort |= bitMask;
 
-    // temporary register values used as "clobbers"
+    // clobbers
     register uint8_t timeoutCount; // counts down the timeout
     register uint8_t bitCount; // counts down 8 bits for each byte
     register uint8_t inputVal; // temporary variable to save the pin states
@@ -316,7 +185,7 @@ uint8_t gc_n64_get(uint8_t* buff, uint8_t len,
     register uint8_t initialTimeoutCount; // extra timeout count for initial function call
 
     asm volatile (
-        "; Start of gc_n64_get assembly\n"
+        ";gcReceive()\n"
 
         // [bitCount] is our bit counter. We read %[len] bytes
         // and increment the byte pointer and receivedBytes every 8 bits
@@ -441,107 +310,55 @@ uint8_t gc_n64_get(uint8_t* buff, uint8_t len,
         [inPort] "e" (inPort),
         [bitMask] "r" (bitMask),
         [timeout] "M" (128) // constant
-    ); // end of asm volatile
+    );
 
     return receivedBytes;
 }
 
-bool gc_init(const uint8_t pin, Gamecube_N64_Status_t* status)
-{
+
+bool gccInitialize(const uint8_t pin, GCStatus_t* stat) {
     uint8_t command[] = { 0x00 };
-    uint8_t receivedBytes = gc_n64_send_get(pin, command, sizeof(command), (uint8_t*)status, sizeof(Gamecube_N64_Status_t));
-    return (receivedBytes == sizeof(Gamecube_N64_Status_t));
+    return gcTransceive(pin, command, sizeof(command), (uint8_t*)stat, sizeof(stat)) == sizeof(stat);
 }
 
-bool gc_origin(const uint8_t pin, Gamecube_Origin_t* origin)
-{
+bool gccOriginate(const uint8_t pin, GCOrigin_t* orig) {
     uint8_t command[] = { 0x41 };
-    uint8_t receivedBytes = gc_n64_send_get(pin, command, sizeof(command), (uint8_t*)origin, sizeof(Gamecube_Origin_t));
-    return (receivedBytes == sizeof(Gamecube_Origin_t));
+    return gcTransceive(pin, command, sizeof(command), (uint8_t*)orig, sizeof(orig)) == sizeof(orig);
 }
 
-bool gc_read(const uint8_t pin, Gamecube_Report_t* report, const bool rumble)
-{
+bool gccPoll(const uint8_t pin, GCReport_t* rept, const bool rumble) {
     uint8_t command[] = { 0x40, 0x03, rumble };
-    uint8_t receivedBytes = gc_n64_send_get(pin, command, sizeof(command), (uint8_t*)report, sizeof(Gamecube_Report_t));
-    return (receivedBytes == sizeof(Gamecube_Report_t));
+    return gcTransceive(pin, command, sizeof(command), (uint8_t*)rept, sizeof(rept)) == sizeof(rept);
 }
 
-uint8_t gc_write(const uint8_t pin, Gamecube_N64_Status_t* status, Gamecube_Origin_t* origin, Gamecube_Report_t* report)
-{
-    // 0 = no input/error, 1 = init, 2 = origin, 3 = read, 4 = read with rumble
+uint8_t gcWrite(const uint8_t pin, GCStatus_t* stat, GCOrigin_t* orig, GCReport_t* rept) {
     uint8_t ret = 0;
-
-    // Get the port mask and the pointers to the in/out/mode registers
     uint8_t bitMask = digitalPinToBitMask(pin);
     uint8_t port = digitalPinToPort(pin);
     volatile uint8_t* modePort = portModeRegister(port);
     volatile uint8_t* outPort = portOutputRegister(port);
     volatile uint8_t* inPort = portInputRegister(port);
 
-    // Don't want interrupts getting in the way
     uint8_t oldSREG = SREG;
     cli();
 
-    // Read in data from the console
-    // After receiving the init command you have max 80us to respond (for the data command)!
-    uint8_t command[3] = {0,0,0}; // TODO do not init
-    uint8_t receivedBytes = gc_n64_get(command, sizeof(command), modePort, outPort, inPort, bitMask);
+    uint8_t command[3] = { 0, 0, 0 };
+    uint8_t numRecv = receive(command, sizeof(command), modePort, outPort, inPort, bitMask);
 
-    // Init
-    if (receivedBytes == 1 && command[0] == 0x00)
-    {
-        gc_n64_send(status->raw8, sizeof(Gamecube_N64_Status_t), modePort, outPort, bitMask);
-        ret = 1;
-    }
-    // Get origin
-    else if (receivedBytes == 1 && command[0] == 0x41)
-    {
-        gc_n64_send(origin->raw8, sizeof(Gamecube_Origin_t), modePort, outPort, bitMask);
-        ret = 2;
-    }
-    // Get data. Do not check last byte (command[2]), as the flags are unknown
-    else if (receivedBytes == 3 && command[0] == 0x40 && command[1] == 0x03)
-    {
-        gc_n64_send(report->raw8, sizeof(Gamecube_Report_t), modePort, outPort, bitMask);
-        ret = 3;
-        // The first byte probably flags a gamecube reading (0x40), as the same
-        // protocol is also used for N64. The lower nibble seems to be the mode:
-        // 0x40 (followed by 2 bytes) reading
-        // 0x41 get origin (1 byte)
-        // 0x42 (followed by 2 bytes) seems to force mode 0x02 below
-        // 0x43 (followed by 2 bytes) seems to force mode 0x02 below
-
-        // The 2nd byte (command[1]) seems to request a special data format.
-        // I've noticed formats that merge the L + R data.
-        // There seem to be only 4 data formats, the rest is ignore.
-        // 0x00 First 4 bytes: buttons0+1 + X + Y, C-Stick, L+R minimum of both, 0x00 fixed
-        // 0x01 First 4 bytes: buttons0+1 + X + Y, C-Stick Horizontal only, R, L, 0x00 fixed
-        // 0x02 First 4 bytes: buttons0+1 + X + Y, C-Stick Horizontal only, L+R minimum of both, 0x02 fixed, 0x01 fixed
-        // 0x03 Normal reading
-
-        // I've seen 3 last options for the last byte (command[2]):
-        // 0x00 Normal reading
-        // 0x01 Enable rumble
-        // 0x02 Normal reading, rumble was at least called once
-        // 0x03 ??? - never seen so far
-        // Rumble: 1, 5, 9, 13, 17, ...
-        // You can see that only 4 of those requests are possible,
-        // the gamecube will ignore the left 6 MSB.
-        if((command[2] % 4) == 0x01){
-            ret = 4;
+    if (numRecv == 1) {
+        if (command[0] == 0x00) {
+            transmit(stat->raw, sizeof(stat), modePort, outPort, bitMask);
+            ret = 1;
+        } else if (command[0] == 0x41) {
+            transmit(orig->raw, sizeof(orig), modePort, outPort, bitMask);
+            ret = 2;
         }
-        else if((command[2] % 4) == 0x02){
-            ret = 5;
-        }
-        else if((command[2] % 4) == 0x03){
-            ret = 6;
-        }
+    } else if (numRecv == 3 && command[0] == 0x40 && command[1] == 0x03) {
+        transmit(rept->raw, sizeof(rept), modePort, outPort, bitMask);
+        ret = 3 + command[2] % 4;
     }
 
-    // End of time sensitive code
     SREG = oldSREG;
-
-    return ret;
+    return ret; // 1 = init, 2 = origin, 3-6 = read w/rumble state
 }
 

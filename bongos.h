@@ -1,6 +1,4 @@
-/*
-Copyright (c) 2014-2016 NicoHood
-See the readme for credit to other people.
+/* Copyright (c) 2014-2016 NicoHood
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -18,9 +16,7 @@ FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
 AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-THE SOFTWARE.
-*/
-
+THE SOFTWARE. */
 #pragma once
 #include <Arduino.h>
 
@@ -28,41 +24,40 @@ THE SOFTWARE.
 #error This library is only for AVRs set to 16 MHz (e.g. Uno, Nano)
 #endif
 
-// byte-flipped because C/C++ is little-endian
-#define NINTENDO_DEVICE_GC_WIRED    0x0009
+#define GCC_AND_BONGOS 0x0009 // byte flipped because C/C++ is little-endian
 
-typedef union{
+typedef union {
     uint8_t raw[3];
     struct {
         uint16_t device;
-        union{
+        union {
             uint8_t status;
-            struct{
+            struct {
                 uint8_t : 3;
                 uint8_t rumble : 1;
                 uint8_t : 4;
             };
         };
     };
-} Gamecube_N64_Status_t;
+} GCStatus_t;
 
-typedef union{
+typedef union {
     uint8_t raw[8];
     uint16_t raw16[4];
     uint32_t raw32[2];
-
     struct{
         uint8_t : 8;
         uint8_t dpad : 4;
     };
-
     struct {
         uint8_t a : 1;
         uint8_t b : 1;
         uint8_t x : 1;
         uint8_t y : 1;
         uint8_t start : 1;
-        uint8_t : 3;
+        uint8_t origin : 1; // 1 if just plugged in or x+y+start
+        uint8_t errLatch : 1;
+        uint8_t errStat : 1;
 
         uint8_t dl : 1;
         uint8_t dr : 1;
@@ -80,229 +75,169 @@ typedef union{
         uint8_t lt;
         uint8_t rt;
     };
-} Gamecube_Report_t;
+} GCReport_t;
 
-typedef union{
+typedef union {
     uint8_t raw[10];
     uint16_t raw16[5];
     uint32_t raw32[2];
-    Gamecube_Report_t report;
-} Gamecube_Origin_t;
+    GCReport_t report;
+} GCOrigin_t;
 
-struct Gamecube_Data_t{
-    Gamecube_N64_Status_t status;
-    Gamecube_Origin_t origin;
-    Gamecube_Report_t report;
+struct GCData_t {
+    GCStatus_t status;
+    GCOrigin_t origin;
+    GCReport_t report;
 };
 
-static constexpr Gamecube_Data_t defaultGamecubeData = {
-    .status = { 0x09, 0x00, 0x03 },
+static constexpr GCData_t defGCData = {
+    .status = { 0x09, 0x00, 0x03 }, // think it's actually 0x090002
     .origin = { 0x00, 0x80, 0x80, 0x80, 0x80, 0x80, 0x1F, 0x1F, 0x00, 0x00 },
     .report = { 0x00, 0x80, 0x80, 0x80, 0x80, 0x80, 0x1F, 0x1F }
 };
+
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-uint8_t gc_n64_send_get(const uint8_t pin, uint8_t* command, const uint8_t commandLen,
-    uint8_t* report, const uint8_t reportLen) __attribute__((noinline));
+uint8_t gcTransceive(const uint8_t pin, uint8_t* command, const uint8_t cmdLen, uint8_t* buffer, const uint8_t buffLen) __attribute__((noinline));
+void gcTransmit(const uint8_t* buff, uint8_t len, volatile uint8_t* modePort, volatile uint8_t* outPort, uint8_t bitMask) __attribute__((noinline));
+uint8_t gcReceive(uint8_t* buff, uint8_t len, volatile uint8_t* modePort, volatile uint8_t* outPort, volatile uint8_t * inPort, uint8_t bitMask) __attribute__((noinline));
 
-void gc_n64_send(const uint8_t* buff, uint8_t len,
-    volatile uint8_t* modePort, volatile uint8_t* outPort, uint8_t bitMask)
-    __attribute__((noinline));
 
-uint8_t gc_n64_get(uint8_t* buff, uint8_t len,
-    volatile uint8_t* modePort, volatile uint8_t* outPort, volatile uint8_t * inPort, uint8_t bitMask)
-    __attribute__((noinline));
-
-bool gc_init(const uint8_t pin, Gamecube_N64_Status_t* status);
-bool gc_origin(const uint8_t pin, Gamecube_Origin_t* origin);
-bool gc_read(const uint8_t pin, Gamecube_Report_t* report, const bool rumble);
-uint8_t gc_write(const uint8_t pin, Gamecube_N64_Status_t* status, Gamecube_Origin_t* origin, Gamecube_Report_t* report);
+bool gccInitialize(const uint8_t pin, GCStatus_t* stat);
+bool gccOriginate(const uint8_t pin, GCOrigin_t* orig);
+bool gccPoll(const uint8_t pin, GCReport_t* rept, const bool rumble);
+uint8_t gcWrite(const uint8_t pin, GCStatus_t* stat, GCOrigin_t* orig, GCReport_t* rept);
 
 #ifdef __cplusplus
 }
 #endif
 
-class CGamecubeController : protected Gamecube_Data_t {
-public:
-    inline CGamecubeController(const uint8_t p) : pin(p){}
 
-    inline void reset(void){
-        status = Gamecube_N64_Status_t();
+class GCController : protected GCData_t {
+public:
+    inline GCController(const uint8_t p) : pin(p) {}
+
+    inline void reset(void) { // in C, ommitting void specifies unlimited parameters
+        status = GCStatus_t();
     }
 
-    inline bool begin(void){
-        // Try to init the controller
-        if (!gc_init(pin, &status))
-        {
-            // Reset in any case, as some bytes may have been written.
+    inline bool begin(void) {
+        if (!gccInitialize(pin, &status)) {
             reset();
             return false;
         }
 
-        // If initialization was successful also get the original controller stats
-        if (!gc_origin(pin, &origin))
-        {
-            return false;
-        }
-
-        // No error
-        return true;
+        return !gccOriginate(pin, &origin);
     }
 
-    inline uint16_t getDevice(void){
+    inline uint16_t getDevice(void) {
         return status.device;
     }
 
-    inline bool connected(void){
-        return (status.device != NINTENDO_DEVICE_GC_NONE);
+    inline bool connected(void) {
+        return status.device;
     }
 
-    inline bool read(void){
-        // Check if the controller was initialized
-        if (!connected())
-        {
-            // Try to init the controller
-            if (!begin())
-            {
+    inline bool read(void) {
+        if (!connected()) {
+            if (!begin()) {
                 return false;
             }
         }
-
-        // Read the controller, abort if it fails.
-        // Additional information: If you press X + Y + Start on the controller for 3 seconds
-        // It will turn off unless you release the buttons. The recalibration is all done
-        // on the Gamecube side. If the controller resets origin will have different values for sure.
-        if (!gc_read(pin, &report, status.rumble))
-        {
+        if (!gc_read(pin, &report, status.rumble)) {
             reset();
             return false;
         }
 
-        // Check if controller reported that we read the origin values (check if it disconnected).
-        // The Gamecube would just request (instantly) the origin again, but we keep things simple.
-        if (report.origin) {
-            reset();
-            return false;
-        }
-
-        // Return status information for optional use.
-        // On error the report may have been modified!
-        return true;
+        return !report.origin;
     }
 
-    inline bool getRumble(void){
+    inline bool getRumble(void) {
         return status.rumble;
     }
 
-    inline bool setRumble(bool rumble){
-        bool oldRumble = getRumble();
+    inline bool setRumble(bool rumble) {
+        bool temp = getRumble();
         status.rumble = rumble;
-        return oldRumble;
+        return temp;
     }
 
-    inline bool end(void){
-        // Try to init the controller
-        if (connected() || getRumble())
-        {
-            // Reset in any case, as some bytes may have been written.
+    inline bool end(void) {
+        if (connected() || getRumble()) {
             Gamecube_Report_t tmp;
             return gc_read(pin, &tmp, false);
         }
 
-        // Error: Already disconnected
         return false;
     }
 
-    inline Gamecube_N64_Status_t getStatus(void){
+    inline GCStatus_t getStatus(void) {
         return status;
     }
 
-    inline Gamecube_Origin_t getOrigin(void){
+    inline GCOrigin_t getOrigin(void) {
         return origin;
     }
 
-    inline Gamecube_Report_t getReport(void){
+    inline GCReport_t getReport(void) {
         return report;
     }
 
-    inline Gamecube_Data_t getData(void){
-        Gamecube_Data_t* dataPtr = this;
-        Gamecube_Data_t data;
+    inline GCData_t getData(void) {
+        GCData_t* dataPtr = this; // cast "this" instead?
+        GCData_t data;
         memcpy(&data, dataPtr, sizeof(data));
         return data;
     }
 
 protected:
     const uint8_t pin;
-    friend class CGamecubeConsole;
+    friend class GameCube;
 };
 
-class CGamecubeConsole{
+class GameCube {
 public:
-    inline CGamecubeConsole(const uint8_t p) : pin(p){}
+    inline GameCube(const uint8_t p) : pin(p) {}
 
-    inline bool write(Gamecube_Data_t &data){
-        // Abort if controller was not initialized.
-        // Gamecube will refuse and weird connect/disconnect errors will occur.
+    inline bool write(GCData_t& data) { // GCData_t& data is a reference, not a copy
         if (data.report.origin) {
             return false;
         }
 
-        // Don't want interrupts getting in the way
         uint8_t oldSREG = SREG;
         cli();
 
-        // Write a respond to the gamecube, depending on what it requests
-        uint8_t ret = gc_write(pin, &data.status, &data.origin, &data.report);
-
-        // Init
-        if(ret == 1)
-        {
-            // Try to answer a possible following origin request
-            ret = gc_write(pin, &data.status, &data.origin, &data.report);
+        uint8_t ret = gcWrite(pin, &data.status, &data.origin, &data.report);
+        if (ret == 1) {
+            ret = gcWrite(pin, &data.status, &data.origin, &data.report);
+        }
+        if (ret == 2) {
+            ret = gcWrite(pin, &data.status, &data.origin, &data.report);
         }
 
-        // Origin
-        if(ret == 2){
-            // Try to answer a possible following read request
-            ret = gc_write(pin, &data.status, &data.origin, &data.report);
-        }
-
-        // End of time sensitive code
         SREG = oldSREG;
 
-        // Set rumble depending on read return value
-        if (ret == 3) {
+        if (ret == 3 || ret == 5) {
             data.status.rumble = false;
-            return true;
-        }
-        else if (ret == 4) {
+        } else if (ret == 4) {
             data.status.rumble = true;
-            return true;
-        }
-        else if (ret == 5) {
-            data.status.rumble = false;
-            return true;
+        } else {
+            return false;
         }
 
-        // Return error if no reading was possible
-        return false;
+        return true;
     }
 
-    inline bool write(CGamecubeController &controller){
-        // Cast controller to its protected (friend) data
-        Gamecube_Data_t& data = controller;
+    inline bool write(GCController& controller) {
+        GCData_t& data = controller; // cast controller instad?
         return write(data);
     }
 
-    inline bool write(Gamecube_Report_t &report){
-        // Inititalize init and origin with default values
-        Gamecube_Data_t data = defaultGamecubeData;
-
-        // Copy report into the temporary struct and write to gamecube
+    inline bool write(GCReport_t& report) {
+        GCData_t data = defGCData;
         memcpy(&data.report, &report, sizeof(data.report));
         return write(data);
     }
