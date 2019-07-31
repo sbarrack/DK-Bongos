@@ -36,6 +36,7 @@ uint8_t gcTransceive(const uint8_t pin, uint8_t* command, const uint8_t cmdLen, 
     return temp;
 }
 
+// TODO integrate this macro function with the nop_block() macro
 #define nopManual(n) nopn ## n // n % 3 nops
 #define nopn1 "nop\n"
 #define nopn2 "nop\nnop\n"
@@ -49,6 +50,8 @@ uint8_t gcTransceive(const uint8_t pin, uint8_t* command, const uint8_t cmdLen, 
 /* only 3 or less nops don't get optimized out guarenteed https://www.avrfreaks.net/forum/problems-delaying-nops-avr-gcc
 (1) ldi + floor(N - 1 / 3) * ((1) dec + (2) brne passes) + (1) dec + (1) brne fails + N % 3 = N nops */
 #define nop_block(id, N) "ldi %[nop], (" #N "/3)\n.L%=_nop_loop" #id ":\ndec %[nop]\nbrne .L%=_nop_loop" #id "\n" nopManual(N)
+
+// TODO simplify assembly
 
 void gcTransmit(const uint8_t* buff, uint8_t len, volatile uint8_t* modePort, volatile uint8_t* outPort, uint8_t bitMask) {
     *outPort |= bitMask; // high b/c idle high

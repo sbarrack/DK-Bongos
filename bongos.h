@@ -165,6 +165,7 @@ public:
         return temp;
     }
 
+    // doesn't end the connection, returns false when it is disconnected
     inline bool end(void) {
         if (connected() || getRumble()) {
             Gamecube_Report_t tmp;
