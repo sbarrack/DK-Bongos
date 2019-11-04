@@ -1,4 +1,4 @@
-#include "bongos.h" // TODO modify assembly code
+#include <Nintendo.h>
 // #include "SdFat.h" // SdFat-beta
 
 // #define SD_CONFIG SdioConfig(DEDICATED_SPI)
@@ -6,8 +6,8 @@
 // use O_ flags and not FILE_ flags
 // use sdformatter.exe
 
-GCController gcc(2);
-GameCube gc(3);
+CGamecubeController gcc(2);
+CGamecubeConsole gc(3);
 
 void setup()
 {
@@ -16,14 +16,9 @@ void setup()
     // use "continue;" to step, use "break;" to exit
     for (;;)
     {
-        passthrough();
+        gcc.read();
+        gc.write(gcc);
     }
 }
 
 void loop() {}
-
-void passthrough(void) {
-    gcc.read();
-    gc.write(gcc);
-}
-
