@@ -1,0 +1,26 @@
+# Gallery
+
+I also have videos on my YouTube channel playlist [here](https://www.youtube.com/playlist?list=PLFUw8BgPDTPsKlGQuro9Kr2euqHmFveuY).  
+
+![LEDs](images/leds.gif)  
+![Macro Keyboard](images/mkb.jpg)  
+![action flowchart](images/IMG_20180831_085218216.jpg)  
+![potential guitar control mapping](images/IMG_20180901_175342955.jpg)  
+![potential guitar control mapping 2](images/IMG_20180905_111710871.jpg)  
+![guitar fret board](images/IMG_20180906_202539136.jpg)  
+![fret board inside](images/IMG_20180909_131023536.jpg)  
+![test enamel paint on guitar](images/IMG_20181008_172845411.jpg)  
+![painted guitar frets](images/IMG_20181010_142458695.jpg)  
+![silver guitar paint trim](images/IMG_20181010_142616017.jpg)  
+![test enamel paint on guitar 2](images/IMG_20181010_142630377.jpg)  
+![fret board inside 2](images/IMG_20181015_130226158.jpg)  
+![guitar neck pinout](images/IMG_20181015_130244425.jpg)  
+![full painted fret board](images/IMG_20181015_131731932.jpg)  
+![HC-05 bluetooth module](images/IMG_20181112_110619038.jpg)  
+![Teensy bluetooth macro keyboard](images/IMG_20181203_111711327.jpg)  
+![crimped GameCube & N64 cables](images/IMG_20190524_191710.jpg)  
+![Teensy + Nano breadboard](images/IMG_20190525_120136.jpg)  
+![mess of wires](images/IMG_20190527_142419.jpg)  
+![Bongos v1.0 prototype inside](images/IMG_20191229_194445.jpg)  
+![Bongos v1.0 prototype outside](images/IMG_20191229_200409.jpg)  
+![Bongos v2.0 prototype outside](images/IMG_20200107_151823.jpg)
